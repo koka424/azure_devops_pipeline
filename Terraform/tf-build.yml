@@ -6,6 +6,7 @@ stages:
       displayName: Terraform-CI
       pool:
         name: Hosted VS2017
+        vmImage: 'Ubuntu-16.04'
       steps:
       - task: CopyFiles@2
         displayName: 'Copy Terraform files to artifacts'
@@ -26,6 +27,7 @@ stages:
       displayName: 'Terraform-CI'
       pool:
         name: Hosted VS2017
+        vmImage: 'Ubuntu-16.04'
       environment: 'dev'
       variables:
         terraformstoragerg: 'terraformrg'
