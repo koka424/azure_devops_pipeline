@@ -1,20 +1,21 @@
 name: Terraform
 stages:
 - stage: Build
-  jobs: Build
-  pool:
-    name: Hosted VS2017
-  steps:
-  - task: CopyFiles@2
-    displayName: 'Copy Terraform files to artifacts'
-    inputs:
-      SourceFolder: Terraform
-      TargetFolder: '$(build.artifactstagingdirectory)/Terraform'
+  jobs:
+    - job: Build
+      pool:
+        name: Hosted VS2017
+      steps:
+      - task: CopyFiles@2
+        displayName: 'Copy Terraform files to artifacts'
+        inputs:
+          SourceFolder: Terraform
+          TargetFolder: '$(build.artifactstagingdirectory)/Terraform'
 
-  - task: PublishBuildArtifacts@1
-    displayName: 'Publish Artifact'
-    inputs:
-      PathtoPublish: '$(build.artifactstagingdirectory)'
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact'
+        inputs:
+          PathtoPublish: '$(build.artifactstagingdirectory)'
 - stage: Deploy
   dependsOn: Build
   jobs:
