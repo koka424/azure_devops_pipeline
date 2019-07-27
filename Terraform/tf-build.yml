@@ -71,7 +71,7 @@ stages:
             - task: qetza.replacetokens.replacetokens-task.replacetokens@3
               displayName: 'Replace tokens in terraform file'
               inputs:
-                targetFiles: '**/*.tf'
+                targetFiles: '$(Pipeline.Workspace)/drop/Terraform/*.tf'
                 tokenPrefix: '__'
                 tokenSuffix: '__'
             - task: petergroenewegen.PeterGroenewegen-Xpirit-Vsts-Release-Terraform.Xpirit-Vsts-Release-Terraform.Terraform@2
