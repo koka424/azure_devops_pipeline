@@ -47,7 +47,7 @@ stages:
 
                   call az storage container create --name terraform --account-name $(terraformstorageaccount)
 
-            - task: AzurePowerShell@3
+            - task: AzurePowerShell@4
               displayName: 'Azure PowerShell script to get the storage key'
               inputs:
                 azureSubscription: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
@@ -58,7 +58,7 @@ stages:
                   $key=(Get-AzureRmStorageAccountKey -ResourceGroupName $(terraformstoragerg) -AccountName $(terraformstorageaccount)).Value[0]
 
                   Write-Host "##vso[task.setvariable variable=storagekey]$key"
-                  azurePowerShellVersion: LatestVersion
+                  azurePowerShellVersion: latestVersion
             - task: qetza.replacetokens.replacetokens-task.replacetokens@3
               displayName: 'Replace tokens in terraform file'
               inputs:
