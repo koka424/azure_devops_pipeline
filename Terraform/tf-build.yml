@@ -11,7 +11,8 @@ stages:
         displayName: 'Copy Terraform files to artifacts'
         inputs:
           SourceFolder: Terraform
-          TargetFolder: '$(build.artifactstagingdirectory)/Terraform/main.tf'
+          contents: '/*.tf'
+          TargetFolder: '$(build.artifactstagingdirectory)/Terraform'
 
       - task: PublishPipelineArtifact@0
         displayName: 'Publish Artifact'
