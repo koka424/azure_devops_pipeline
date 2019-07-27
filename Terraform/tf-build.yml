@@ -37,8 +37,7 @@ stages:
             - task: AzureCLI@1
               displayName: 'Azure CLI to deploy required Azure resources'
               inputs:
-                ConnectedServiceNameARM: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
-                #azureSubscription: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
+                azureSubscription: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
                 scriptLocation: inlineScript
                 inlineScript: |
                   # the following script will create Azure resource group, Storage account and a Storage container which will be used to store terraform state
@@ -51,8 +50,7 @@ stages:
             - task: AzurePowerShell@3
               displayName: 'Azure PowerShell script to get the storage key'
               inputs:
-                ConnectedServiceNameARM: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
-                #azureSubscription: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
+                azureSubscription: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
                 ScriptType: InlineScript
                 Inline: |
                   # Using this script we will fetch storage key which is required in terraform file to authenticate backend stoarge account
