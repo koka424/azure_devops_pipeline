@@ -1,0 +1,83 @@
+name: Terraform
+stages:
+- stage: Build
+  jobs: Build
+  pool:
+    name: Hosted VS2017
+  steps:
+  - task: CopyFiles@2
+    displayName: 'Copy Terraform files to artifacts'
+    inputs:
+      SourceFolder: Terraform
+      TargetFolder: '$(build.artifactstagingdirectory)/Terraform'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact'
+    inputs:
+      PathtoPublish: '$(build.artifactstagingdirectory)'
+- stage: Deploy
+  dependsOn: Build
+  jobs:
+    - deployment: 'Agent Job'
+      pool:
+        name: Hosted VS2017
+      environment: 'dev'
+      variables:
+        terraformstoragerg: 'terraformrg'
+        terraformstorageaccount: 'terraformstoraged74fad4d'
+      steps:
+      - task: AzureCLI@1
+        displayName: 'Azure CLI to deploy required Azure resources'
+        inputs:
+          azureSubscription: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
+          scriptLocation: inlineScript
+          inlineScript: |
+            # the following script will create Azure resource group, Storage account and a Storage container which will be used to store terraform state
+            call az group create --location westus --name $(terraformstoragerg)
+
+            call az storage account create --name $(terraformstorageaccount) --resource-group $(terraformstoragerg) --location westus --sku Standard_LRS
+
+            call az storage container create --name terraform --account-name $(terraformstorageaccount)
+
+      - task: AzurePowerShell@3
+        displayName: 'Azure PowerShell script to get the storage key'
+        inputs:
+          azureSubscription: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
+          ScriptType: InlineScript
+          Inline: |
+            # Using this script we will fetch storage key which is required in terraform file to authenticate backend stoarge account
+
+            $key=(Get-AzureRmStorageAccountKey -ResourceGroupName $(terraformstoragerg) -AccountName $(terraformstorageaccount)).Value[0]
+
+            Write-Host "##vso[task.setvariable variable=storagekey]$key"
+            azurePowerShellVersion: LatestVersion
+      - task: qetza.replacetokens.replacetokens-task.replacetokens@3
+        displayName: 'Replace tokens in terraform file'
+        inputs:
+          targetFiles: '**/*.tf'
+          tokenPrefix: '__'
+          tokenSuffix: '__'
+      - task: petergroenewegen.PeterGroenewegen-Xpirit-Vsts-Release-Terraform.Xpirit-Vsts-Release-Terraform.Terraform@2
+        displayName: 'Terraform init'
+        inputs:
+          TemplatePath: '$(System.DefaultWorkingDirectory)/**/drop/Terraform'
+          Arguments: init
+          InstallTerraform: true
+          UseAzureSub: true
+          ConnectedServiceNameARM: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
+      - task: petergroenewegen.PeterGroenewegen-Xpirit-Vsts-Release-Terraform.Xpirit-Vsts-Release-Terraform.Terraform@2
+        displayName: 'Terraform plan'
+        inputs:
+          TemplatePath: '$(System.DefaultWorkingDirectory)/**/drop/Terraform'
+          Arguments: plan
+          InstallTerraform: true
+          UseAzureSub: true
+          ConnectedServiceNameARM: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
+      - task: petergroenewegen.PeterGroenewegen-Xpirit-Vsts-Release-Terraform.Xpirit-Vsts-Release-Terraform.Terraform@2
+        displayName: 'Terraform apply -auto-approve'
+        inputs:
+          TemplatePath: '$(System.DefaultWorkingDirectory)/**/drop/Terraform'
+          Arguments: 'apply -auto-approve'
+          InstallTerraform: true
+          UseAzureSub: true
+          ConnectedServiceNameARM: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
