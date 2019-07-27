@@ -16,7 +16,7 @@ stages:
       - task: PublishPipelineArtifact@0
         displayName: 'Publish Artifact'
         inputs:
-          PathtoPublish: '$(build.artifactstagingdirectory)'
+          PathtoPublish: '$(build.artifactstagingdirectory)/drop'
 - stage: Deploy
   dependsOn: Build
   jobs:
