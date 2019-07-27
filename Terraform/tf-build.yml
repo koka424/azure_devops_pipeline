@@ -3,6 +3,7 @@ stages:
 - stage: Build
   jobs:
     - job: Build
+      displayName: Terraform-CI
       pool:
         name: Hosted VS2017
       steps:
@@ -19,7 +20,8 @@ stages:
 - stage: Deploy
   dependsOn: Build
   jobs:
-    - deployment: 'Agent Job'
+    - deployment: 'TF_CI'
+      displayName: 'Terraform-CI'
       pool:
         name: Hosted VS2017
       environment: 'dev'
