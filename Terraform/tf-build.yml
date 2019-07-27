@@ -37,6 +37,7 @@ stages:
             - task: AzureCLI@1
               displayName: 'Azure CLI to deploy required Azure resources'
               inputs:
+                ConnectedServiceNameARM: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
                 #azureSubscription: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
                 scriptLocation: inlineScript
                 inlineScript: |
@@ -50,6 +51,7 @@ stages:
             - task: AzurePowerShell@3
               displayName: 'Azure PowerShell script to get the storage key'
               inputs:
+                ConnectedServiceNameARM: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
                 #azureSubscription: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
                 ScriptType: InlineScript
                 Inline: |
@@ -72,7 +74,7 @@ stages:
                 Arguments: init
                 InstallTerraform: true
                 UseAzureSub: true
-                #ConnectedServiceNameARM: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
+                ConnectedServiceNameARM: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
             - task: petergroenewegen.PeterGroenewegen-Xpirit-Vsts-Release-Terraform.Xpirit-Vsts-Release-Terraform.Terraform@2
               displayName: 'Terraform plan'
               inputs:
@@ -80,7 +82,7 @@ stages:
                 Arguments: plan
                 InstallTerraform: true
                 UseAzureSub: true
-                #ConnectedServiceNameARM: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
+                ConnectedServiceNameARM: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
             - task: petergroenewegen.PeterGroenewegen-Xpirit-Vsts-Release-Terraform.Xpirit-Vsts-Release-Terraform.Terraform@2
               displayName: 'Terraform apply -auto-approve'
               inputs:
@@ -88,4 +90,4 @@ stages:
                 Arguments: 'apply -auto-approve'
                 InstallTerraform: true
                 UseAzureSub: true
-                #ConnectedServiceNameARM: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
+                ConnectedServiceNameARM: 'Free Trial (af56a43c-3ecb-4d76-96ec-93b1f016f1cd)'
