@@ -13,7 +13,7 @@ stages:
           SourceFolder: Terraform
           TargetFolder: '$(build.artifactstagingdirectory)/Terraform'
 
-      - task: PublishBuildArtifacts@1
+      - task: PublishPipelineArtifact@0
         displayName: 'Publish Artifact'
         inputs:
           PathtoPublish: '$(build.artifactstagingdirectory)'
@@ -32,6 +32,8 @@ stages:
         runOnce:
           deploy:
             steps:
+            - task: DownloadPipelineArtifact@2
+              displayName: 'Download Artifacts'
             - task: AzureCLI@1
               displayName: 'Azure CLI to deploy required Azure resources'
               inputs:
