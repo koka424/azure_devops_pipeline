@@ -74,7 +74,7 @@ stages:
             - task: petergroenewegen.PeterGroenewegen-Xpirit-Vsts-Release-Terraform.Xpirit-Vsts-Release-Terraform.Terraform@2
               displayName: 'Terraform init'
               inputs:
-                TemplatePath: '$(System.DefaultWorkingDirectory)/**/drop/Terraform'
+                TemplatePath: '$(System.DefaultWorkingDirectory)/drop/Terraform'
                 Arguments: init
                 InstallTerraform: true
                 UseAzureSub: true
@@ -82,7 +82,7 @@ stages:
             - task: petergroenewegen.PeterGroenewegen-Xpirit-Vsts-Release-Terraform.Xpirit-Vsts-Release-Terraform.Terraform@2
               displayName: 'Terraform plan'
               inputs:
-                TemplatePath: '$(System.DefaultWorkingDirectory)/**/drop/Terraform'
+                TemplatePath: '$(System.DefaultWorkingDirectory)/drop/Terraform'
                 Arguments: plan
                 InstallTerraform: true
                 UseAzureSub: true
@@ -90,7 +90,7 @@ stages:
             - task: petergroenewegen.PeterGroenewegen-Xpirit-Vsts-Release-Terraform.Xpirit-Vsts-Release-Terraform.Terraform@2
               displayName: 'Terraform apply -auto-approve'
               inputs:
-                TemplatePath: '$(System.DefaultWorkingDirectory)/**/drop/Terraform'
+                TemplatePath: '$(System.DefaultWorkingDirectory)/drop/Terraform'
                 Arguments: 'apply -auto-approve'
                 InstallTerraform: true
                 UseAzureSub: true
