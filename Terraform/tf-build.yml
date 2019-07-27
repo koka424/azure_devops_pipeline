@@ -35,7 +35,7 @@ stages:
             steps:
             - task: DownloadPipelineArtifact@2
               displayName: 'Download Artifacts'
-              artifact: 'drop'
+              artifactName: 'drop'
             - task: AzureCLI@1
               displayName: 'Azure CLI to deploy required Azure resources'
               inputs:
