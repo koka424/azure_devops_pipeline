@@ -1,52 +1,375 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
-    "parameters": {
-      "storageAccountType": {
-        "type": "string",
-        "defaultValue": "Standard_LRS",
-        "allowedValues": [
-          "Standard_LRS",
-          "Standard_GRS",
-          "Standard_ZRS",
-          "Premium_LRS"
-        ],
-        "metadata": {
-          "description": "Storage Account type"
+    "parameters": { 
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]"
         }
-      },
-      "location": {
-        "type": "string",
-        "defaultValue": "[resourceGroup().location]",
-        "metadata": {
-          "description": "Location for all resources."
-        }
-      }
-    },
-    "variables": {
-      "storageAccountName": "[concat('store', uniquestring(resourceGroup().id))]"
-    },
-    "resources": [
-      {
-        "type": "Microsoft.Storage/storageAccounts",
-        "name": "[variables('storageAccountName')]",
-        "location": "[parameters('location')]",
-        "apiVersion": "2018-07-01",
-        "sku": {
-          "name": "[parameters('storageAccountType')]"
+     },
+    "variables": {  },
+    "functions": [  ],
+    "resources": [ 
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "test-arm-rg-dev-network",
+            "apiVersion": "2019-04-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes":[
+                        "10.0.0.0/16"
+                    ]
+                },
+                    "subnets": [
+                        {
+                        "name": "test-arm-rg-dev-network-frontend",
+                        "properties": {
+                            "addressPrefix": "10.0.1.0/24"
+                        }
+                    },
+                    {
+                        "name": "test-arm-rg-dev-network-backend",
+                        "properties": {
+                            "addressPrefix": "10.0.2.0/24"
+                        }
+                    }
+                ]
+            }
         },
-        "kind": "StorageV2",
-        "properties": {}
-      }
-    ],
-    "outputs": {
-      "storageAccountName": {
-        "type": "string",
-        "value": "[variables('storageAccountName')]"
-      },
-      "storageUri": {
-        "type": "string",
-        "value": "[reference(variables('storageAccountName')).primaryEndpoints.blob]"
-      }
-    }
-  }
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2019-04-01",
+            "name": "test-arm-rg-dev-lb-ip",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Basic",
+                "tier": "Regional"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "publicIPAddressVersion": "IPv4"
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2019-04-01",
+            "name": "test-arm-rg-dev-jumpbox-ip",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Basic",
+                "tier": "Regional"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "publicIPAddressVersion": "IPv4"
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2019-04-01",
+            "name": "test-arm-rg-dev-jumpbox-sg",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "test-arm-rg-dev-jumpbox-sg-ssh",
+                        "properties": {
+                            "description": "Allow inbound SSH connections",
+                            "protocol": "Tcp",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "destinationAddressPrefix": "*",
+                            "priority": 1001,
+                            "access": "Allow",
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2019-04-01",
+            "name": "test-arm-rg-dev-jumpbox-nic",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', 'test-arm-rg-dev-jumpbox-ip')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', 'test-arm-rg-dev-network')]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', 'test-arm-rg-dev-jumpbox-sg')]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "test-arm-rg-dev-jumpbox-nic-conf",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'test-arm-rg-dev-jumpbox-ip')]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'test-arm-rg-dev-network', 'test-arm-rg-dev-network-backend')]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'test-arm-rg-dev-jumpbox-sg')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2019-03-01",
+            "name": "test-arm-rg-dev-jumpbox-vm",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', 'test-arm-rg-dev-jumpbox-nic')]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_DS1_v2"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "16.04-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "name": "myOsDisk",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite",
+                        "writeAcceleratorEnabled": false,
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        },
+                        "diskSizeGB": 30
+                    }
+                },
+                "osProfile": {
+                    "computerName": "test-arm-rg-dev-jumpbox-vm",
+                    "adminUsername": "plankton",
+                    "adminPassword": "Password1234!",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": false,
+                        "provisionVMAgent": true
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'test-arm-rg-dev-jumpbox-nic')]",
+                            "properties": {
+                                "primary": false
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/applicationGateways",
+            "apiVersion": "2019-04-01",
+            "name": "test-arm-rg-dev-ag",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', 'test-arm-rg-dev-network')]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', 'test-arm-rg-dev-lb-ip')]"
+            ],
+            "properties": {
+                "sku": {
+                    "name": "Standard_Small",
+                    "tier": "Standard",
+                    "capacity": 2
+                },
+                "gatewayIPConfigurations": [
+                    {
+                        "name": "test-arm-rg-dev-ag-ipconfig",
+                        "properties": {
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'test-arm-rg-dev-network', 'test-arm-rg-dev-network-frontend')]"
+                            }
+                        }
+                    }
+                ],
+                "frontendIPConfigurations": [
+                    {
+                        "name": "test-arm-rg-dev-ag-feip",
+                        "properties": {
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'test-arm-rg-dev-lb-ip')]"
+                            }
+                        }
+                    }
+                ],
+                "frontendPorts": [
+                    {
+                        "name": "test-arm-rg-dev-ag-feport",
+                        "properties": {
+                            "port": 80
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "test-arm-rg-dev-ag-beap"
+                    }
+                ],
+                "backendHttpSettingsCollection": [
+                    {
+                        "name": "test-arm-rg-dev-ag-be-htst",
+                        "properties": {
+                            "port": 80,
+                            "protocol": "Http",
+                            "cookieBasedAffinity": "Disabled"
+                        }
+                    }
+                ],
+                "httpListeners": [
+                    {
+                        "name": "test-arm-rg-dev-ag-httplstn",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag'), '/frontendIPConfigurations/test-arm-rg-dev-ag-feip')]"
+                            },
+                            "frontendPort": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag'), '/frontendPorts/test-arm-rg-dev-ag-feport')]"
+                            },
+                            "protocol": "Http",
+                            "SslCertificate": null
+                        }
+                    }
+                ],
+                "requestRoutingRules": [
+                    {
+                        "name": "test-arm-rg-dev-ag-rqrt",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag'), '/httpListeners/test-arm-rg-dev-ag-httplstn')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag'), '/backendAddressPools/test-arm-rg-dev-ag-beap')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag'), '/backendHttpSettingsCollection/test-arm-rg-dev-ag-be-htst')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachineScaleSets",
+            "apiVersion": "2019-03-01",
+            "name": "test-arm-rg-dev-vmss",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', 'test-arm-rg-dev-network')]",
+                "[resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag')]"
+            ],
+            "sku": {
+                "name": "Standard_DS1_v2",
+                "tier": "Standard",
+                "capacity": 2
+            },
+            "properties": {
+                "singlePlacementGroup": true,
+                "upgradePolicy": {
+                    "mode": "Manual",
+                    "automaticOSUpgradePolicy": {
+                        "enableAutomaticOSUpgrade": false,
+                        "disableAutomaticRollback": false
+                    }
+                },
+                "virtualMachineProfile": {
+                    "osProfile": {
+                        "computerNamePrefix": "test-arm-rg-dev-vmss-vm",
+                        "adminUsername": "plankton",
+                        "adminPassword": "Password1234!",
+                        "linuxConfiguration": {
+                            "disablePasswordAuthentication": false
+                        }
+                    },
+                    "storageProfile": {
+                        "osDisk": {
+                            "createOption": "FromImage",
+                            "caching": "ReadWrite",
+                            "managedDisk": {
+                                "storageAccountType": "Premium_LRS"
+                            }
+                        },
+                        "imageReference": {
+                            "publisher": "Canonical",
+                            "offer": "UbuntuServer",
+                            "sku": "16.04-LTS",
+                            "version": "latest"
+                        },
+                        "dataDisks": [
+                            {
+                                "lun": 0,
+                                "createOption": "Empty",
+                                "caching": "ReadWrite",
+                                "managedDisk": {
+                                    "storageAccountType": "Standard_LRS"
+                                },
+                                "diskSizeGB": 10
+                            }
+                        ]
+                    },
+                    "networkProfile": {
+                        "networkInterfaceConfigurations": [
+                            {
+                                "name": "test-arm-rg-dev-vmss-np",
+                                "properties": {
+                                    "primary": true,
+                                    "ipConfigurations": [
+                                        {
+                                            "name": "test-arm-rg-dev-vmss-np-ipconfig",
+                                            "properties": {
+                                                "subnet": {
+                                                    "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'test-arm-rg-dev-network', 'test-arm-rg-dev-network-backend')]"
+                                                },
+                                                "applicationGatewayBackendAddressPools": [
+                                                    {
+                                                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag'), '/backendAddressPools/test-arm-rg-dev-ag-beap')]"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    "extensionProfile": {
+                        "extensions": [
+                            {
+                                "name": "CustomScript",
+                                "properties": {
+                                    "autoUpgradeMinorVersion": true,
+                                    "publisher": "Microsoft.Azure.Extensions",
+                                    "type": "CustomScript",
+                                    "typeHandlerVersion": "2.0",
+                                    "settings": {
+                                        "commandToExecute": "./install_nginx.sh",
+                                        "fileUris": [
+                                            "https://raw.githubusercontent.com/Azure/azure-docs-powershell-samples/master/application-gateway/iis/install_nginx.sh"
+                                        ]
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "overprovision": true,
+                "doNotRunExtensionsOnOverprovisionedVMs": false
+            }
+        }
+     ],
+    "outputs": {  }
+}
