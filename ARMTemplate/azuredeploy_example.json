@@ -1,0 +1,940 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+      "publicIPAddresses_example_pip_domainNameLabel": {
+          "defaultValue": null,
+          "type": "SecureString"
+      },
+      "virtualMachines_myTFVM_name": {
+          "defaultValue": "myTFVM",
+          "type": "String"
+      },
+      "networkInterfaces_myNIC_name": {
+          "defaultValue": "myNIC",
+          "type": "String"
+      },
+      "virtualNetworks_myTFVnet_name": {
+          "defaultValue": "myTFVnet",
+          "type": "String"
+      },
+      "networkSecurityGroups_SSH_name": {
+          "defaultValue": "SSH",
+          "type": "String"
+      },
+      "publicIPAddresses_example_pip_name": {
+          "defaultValue": "example-pip",
+          "type": "String"
+      },
+      "publicIPAddresses_jumpbox_pip_name": {
+          "defaultValue": "jumpbox-pip",
+          "type": "String"
+      },
+      "virtualMachineScaleSets_myTFVMSS_1_name": {
+          "defaultValue": "myTFVMSS-1",
+          "type": "String"
+      },
+      "applicationGateways_example_appgateway_name": {
+          "defaultValue": "example-appgateway",
+          "type": "String"
+      },
+      "disks_myTFVMSS_1_myTFVMSS_1_0_OsDisk_1_14ce959b6f5c4538981d543ff783e32b_externalid": {
+          "defaultValue": "/subscriptions/af56a43c-3ecb-4d76-96ec-93b1f016f1cd/resourceGroups/myTF_VSS_rg/providers/Microsoft.Compute/disks/myTFVMSS-1_myTFVMSS-1_0_OsDisk_1_14ce959b6f5c4538981d543ff783e32b",
+          "type": "String"
+      },
+      "disks_myTFVMSS_1_myTFVMSS_1_0_disk2_645f7da8ca704b18bd5636a6f0fe544d_externalid": {
+          "defaultValue": "/subscriptions/af56a43c-3ecb-4d76-96ec-93b1f016f1cd/resourceGroups/myTF_VSS_rg/providers/Microsoft.Compute/disks/myTFVMSS-1_myTFVMSS-1_0_disk2_645f7da8ca704b18bd5636a6f0fe544d",
+          "type": "String"
+      },
+      "disks_myTFVMSS_1_myTFVMSS_1_2_OsDisk_1_405463df76f847a4ad8fa307f018caee_externalid": {
+          "defaultValue": "/subscriptions/af56a43c-3ecb-4d76-96ec-93b1f016f1cd/resourceGroups/myTF_VSS_rg/providers/Microsoft.Compute/disks/myTFVMSS-1_myTFVMSS-1_2_OsDisk_1_405463df76f847a4ad8fa307f018caee",
+          "type": "String"
+      },
+      "disks_myTFVMSS_1_myTFVMSS_1_2_disk2_7992baf78aad4035b11b16e3ae39bebb_externalid": {
+          "defaultValue": "/subscriptions/af56a43c-3ecb-4d76-96ec-93b1f016f1cd/resourceGroups/myTF_VSS_rg/providers/Microsoft.Compute/disks/myTFVMSS-1_myTFVMSS-1_2_disk2_7992baf78aad4035b11b16e3ae39bebb",
+          "type": "String"
+      }
+  },
+  "variables": {},
+  "resources": [
+      {
+          "type": "Microsoft.Network/networkSecurityGroups",
+          "apiVersion": "2019-04-01",
+          "name": "[parameters('networkSecurityGroups_SSH_name')]",
+          "location": "eastus",
+          "properties": {
+              "provisioningState": "Succeeded",
+              "resourceGuid": "f8bb433d-e029-4a7f-a32f-efe95463c30e",
+              "securityRules": [
+                  {
+                      "name": "[parameters('networkSecurityGroups_SSH_name')]",
+                      "etag": "W/\"f83a706b-739e-413f-84b1-8ab6a1e2fade\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "protocol": "Tcp",
+                          "sourcePortRange": "*",
+                          "destinationPortRange": "22",
+                          "sourceAddressPrefix": "*",
+                          "destinationAddressPrefix": "*",
+                          "access": "Allow",
+                          "priority": 1001,
+                          "direction": "Inbound",
+                          "sourcePortRanges": [],
+                          "destinationPortRanges": [],
+                          "sourceAddressPrefixes": [],
+                          "destinationAddressPrefixes": []
+                      }
+                  }
+              ],
+              "defaultSecurityRules": [
+                  {
+                      "name": "AllowVnetInBound",
+                      "etag": "W/\"f83a706b-739e-413f-84b1-8ab6a1e2fade\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "description": "Allow inbound traffic from all VMs in VNET",
+                          "protocol": "*",
+                          "sourcePortRange": "*",
+                          "destinationPortRange": "*",
+                          "sourceAddressPrefix": "VirtualNetwork",
+                          "destinationAddressPrefix": "VirtualNetwork",
+                          "access": "Allow",
+                          "priority": 65000,
+                          "direction": "Inbound",
+                          "sourcePortRanges": [],
+                          "destinationPortRanges": [],
+                          "sourceAddressPrefixes": [],
+                          "destinationAddressPrefixes": []
+                      }
+                  },
+                  {
+                      "name": "AllowAzureLoadBalancerInBound",
+                      "etag": "W/\"f83a706b-739e-413f-84b1-8ab6a1e2fade\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "description": "Allow inbound traffic from azure load balancer",
+                          "protocol": "*",
+                          "sourcePortRange": "*",
+                          "destinationPortRange": "*",
+                          "sourceAddressPrefix": "AzureLoadBalancer",
+                          "destinationAddressPrefix": "*",
+                          "access": "Allow",
+                          "priority": 65001,
+                          "direction": "Inbound",
+                          "sourcePortRanges": [],
+                          "destinationPortRanges": [],
+                          "sourceAddressPrefixes": [],
+                          "destinationAddressPrefixes": []
+                      }
+                  },
+                  {
+                      "name": "DenyAllInBound",
+                      "etag": "W/\"f83a706b-739e-413f-84b1-8ab6a1e2fade\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "description": "Deny all inbound traffic",
+                          "protocol": "*",
+                          "sourcePortRange": "*",
+                          "destinationPortRange": "*",
+                          "sourceAddressPrefix": "*",
+                          "destinationAddressPrefix": "*",
+                          "access": "Deny",
+                          "priority": 65500,
+                          "direction": "Inbound",
+                          "sourcePortRanges": [],
+                          "destinationPortRanges": [],
+                          "sourceAddressPrefixes": [],
+                          "destinationAddressPrefixes": []
+                      }
+                  },
+                  {
+                      "name": "AllowVnetOutBound",
+                      "etag": "W/\"f83a706b-739e-413f-84b1-8ab6a1e2fade\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "description": "Allow outbound traffic from all VMs to all VMs in VNET",
+                          "protocol": "*",
+                          "sourcePortRange": "*",
+                          "destinationPortRange": "*",
+                          "sourceAddressPrefix": "VirtualNetwork",
+                          "destinationAddressPrefix": "VirtualNetwork",
+                          "access": "Allow",
+                          "priority": 65000,
+                          "direction": "Outbound",
+                          "sourcePortRanges": [],
+                          "destinationPortRanges": [],
+                          "sourceAddressPrefixes": [],
+                          "destinationAddressPrefixes": []
+                      }
+                  },
+                  {
+                      "name": "AllowInternetOutBound",
+                      "etag": "W/\"f83a706b-739e-413f-84b1-8ab6a1e2fade\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "description": "Allow outbound traffic from all VMs to Internet",
+                          "protocol": "*",
+                          "sourcePortRange": "*",
+                          "destinationPortRange": "*",
+                          "sourceAddressPrefix": "*",
+                          "destinationAddressPrefix": "Internet",
+                          "access": "Allow",
+                          "priority": 65001,
+                          "direction": "Outbound",
+                          "sourcePortRanges": [],
+                          "destinationPortRanges": [],
+                          "sourceAddressPrefixes": [],
+                          "destinationAddressPrefixes": []
+                      }
+                  },
+                  {
+                      "name": "DenyAllOutBound",
+                      "etag": "W/\"f83a706b-739e-413f-84b1-8ab6a1e2fade\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "description": "Deny all outbound traffic",
+                          "protocol": "*",
+                          "sourcePortRange": "*",
+                          "destinationPortRange": "*",
+                          "sourceAddressPrefix": "*",
+                          "destinationAddressPrefix": "*",
+                          "access": "Deny",
+                          "priority": 65500,
+                          "direction": "Outbound",
+                          "sourcePortRanges": [],
+                          "destinationPortRanges": [],
+                          "sourceAddressPrefixes": [],
+                          "destinationAddressPrefixes": []
+                      }
+                  }
+              ]
+          }
+      },
+      {
+          "type": "Microsoft.Network/publicIPAddresses",
+          "apiVersion": "2019-04-01",
+          "name": "[parameters('publicIPAddresses_example_pip_name')]",
+          "location": "eastus",
+          "sku": {
+              "name": "Basic",
+              "tier": "Regional"
+          },
+          "properties": {
+              "provisioningState": "Succeeded",
+              "resourceGuid": "cf6c7bc1-f7f7-4095-9702-0a56c38e4877",
+              "ipAddress": "23.96.56.100",
+              "publicIPAddressVersion": "IPv4",
+              "publicIPAllocationMethod": "Dynamic",
+              "idleTimeoutInMinutes": 4,
+              "dnsSettings": {
+                  "fqdn": "14887122-5874-4119-adba-21b32b1c3ccb.cloudapp.net",
+                  "domainNameLabel": "[parameters('publicIPAddresses_example_pip_domainNameLabel')]"
+              },
+              "ipTags": []
+          }
+      },
+      {
+          "type": "Microsoft.Network/publicIPAddresses",
+          "apiVersion": "2019-04-01",
+          "name": "[parameters('publicIPAddresses_jumpbox_pip_name')]",
+          "location": "eastus",
+          "sku": {
+              "name": "Basic",
+              "tier": "Regional"
+          },
+          "properties": {
+              "provisioningState": "Succeeded",
+              "resourceGuid": "bd55e576-7729-4553-8b9f-053cf13756c3",
+              "ipAddress": "23.96.33.143",
+              "publicIPAddressVersion": "IPv4",
+              "publicIPAllocationMethod": "Dynamic",
+              "idleTimeoutInMinutes": 4,
+              "ipTags": []
+          }
+      },
+      {
+          "type": "Microsoft.Network/virtualNetworks",
+          "apiVersion": "2019-04-01",
+          "name": "[parameters('virtualNetworks_myTFVnet_name')]",
+          "location": "eastus",
+          "properties": {
+              "provisioningState": "Succeeded",
+              "resourceGuid": "e5bc8ff5-244f-441d-b7cd-f7d1febe7e87",
+              "addressSpace": {
+                  "addressPrefixes": [
+                      "10.0.0.0/16"
+                  ]
+              },
+              "dhcpOptions": {
+                  "dnsServers": []
+              },
+              "subnets": [
+                  {
+                      "name": "backend",
+                      "etag": "W/\"4fb08a00-066f-4744-a9ad-5b9599dab0aa\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "addressPrefix": "10.0.2.0/24",
+                          "serviceEndpoints": [],
+                          "delegations": []
+                      }
+                  },
+                  {
+                      "name": "frontend",
+                      "etag": "W/\"4fb08a00-066f-4744-a9ad-5b9599dab0aa\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "addressPrefix": "10.0.1.0/24",
+                          "serviceEndpoints": [],
+                          "delegations": []
+                      }
+                  }
+              ],
+              "virtualNetworkPeerings": [],
+              "enableDdosProtection": false,
+              "enableVmProtection": false
+          }
+      },
+      {
+          "type": "Microsoft.Compute/virtualMachines",
+          "apiVersion": "2019-03-01",
+          "name": "[parameters('virtualMachines_myTFVM_name')]",
+          "location": "eastus",
+          "dependsOn": [
+              "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_myNIC_name'))]"
+          ],
+          "properties": {
+              "hardwareProfile": {
+                  "vmSize": "Standard_DS1_v2"
+              },
+              "storageProfile": {
+                  "imageReference": {
+                      "publisher": "Canonical",
+                      "offer": "UbuntuServer",
+                      "sku": "16.04-LTS",
+                      "version": "latest"
+                  },
+                  "osDisk": {
+                      "osType": "Linux",
+                      "name": "myOsDisk",
+                      "createOption": "FromImage",
+                      "caching": "ReadWrite",
+                      "writeAcceleratorEnabled": false,
+                      "managedDisk": {
+                          "storageAccountType": "Premium_LRS",
+                      },
+                      "diskSizeGB": 30
+                  },
+                  "dataDisks": []
+              },
+              "osProfile": {
+                  "computerName": "[parameters('virtualMachines_myTFVM_name')]",
+                  "adminUsername": "plankton",
+                  "linuxConfiguration": {
+                      "disablePasswordAuthentication": false,
+                      "provisionVMAgent": true
+                  },
+                  "secrets": [],
+                  "allowExtensionOperations": true
+              },
+              "networkProfile": {
+                  "networkInterfaces": [
+                      {
+                          "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_myNIC_name'))]",
+                          "properties": {
+                              "primary": false
+                          }
+                      }
+                  ]
+              }
+          }
+      },
+      {
+          "type": "Microsoft.Compute/virtualMachineScaleSets/extensions",
+          "apiVersion": "2019-03-01",
+          "name": "[concat(parameters('virtualMachineScaleSets_myTFVMSS_1_name'), '/CustomScript')]",
+          "dependsOn": [
+              "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('virtualMachineScaleSets_myTFVMSS_1_name'))]"
+          ],
+          "properties": {
+              "provisioningState": "Succeeded",
+              "autoUpgradeMinorVersion": true,
+              "publisher": "Microsoft.Azure.Extensions",
+              "type": "CustomScript",
+              "typeHandlerVersion": "2.0",
+              "settings": {
+                  "commandToExecute": "./install_nginx.sh",
+                  "fileUris": [
+                      "https://raw.githubusercontent.com/Azure/azure-docs-powershell-samples/master/application-gateway/iis/install_nginx.sh"
+                  ]
+              }
+          }
+      },
+      {
+          "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+          "apiVersion": "2019-04-01",
+          "name": "[concat(parameters('networkSecurityGroups_SSH_name'), '/', parameters('networkSecurityGroups_SSH_name'))]",
+          "dependsOn": [
+              "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_SSH_name'))]"
+          ],
+          "properties": {
+              "provisioningState": "Succeeded",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1001,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+          }
+      },
+      {
+          "type": "Microsoft.Network/virtualNetworks/subnets",
+          "apiVersion": "2019-04-01",
+          "name": "[concat(parameters('virtualNetworks_myTFVnet_name'), '/backend')]",
+          "dependsOn": [
+              "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_myTFVnet_name'))]"
+          ],
+          "properties": {
+              "provisioningState": "Succeeded",
+              "addressPrefix": "10.0.2.0/24",
+              "serviceEndpoints": [],
+              "delegations": []
+          }
+      },
+      {
+          "type": "Microsoft.Network/virtualNetworks/subnets",
+          "apiVersion": "2019-04-01",
+          "name": "[concat(parameters('virtualNetworks_myTFVnet_name'), '/frontend')]",
+          "dependsOn": [
+              "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_myTFVnet_name'))]"
+          ],
+          "properties": {
+              "provisioningState": "Succeeded",
+              "addressPrefix": "10.0.1.0/24",
+              "serviceEndpoints": [],
+              "delegations": []
+          }
+      },
+      {
+          "type": "Microsoft.Compute/virtualMachineScaleSets",
+          "apiVersion": "2019-03-01",
+          "name": "[parameters('virtualMachineScaleSets_myTFVMSS_1_name')]",
+          "location": "eastus",
+          "dependsOn": [
+              "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_myTFVnet_name'), 'backend')]",
+              "[resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_example_appgateway_name'))]"
+          ],
+          "sku": {
+              "name": "Standard_DS1_v2",
+              "tier": "Standard",
+              "capacity": 2
+          },
+          "properties": {
+              "singlePlacementGroup": true,
+              "upgradePolicy": {
+                  "mode": "Manual",
+                  "automaticOSUpgradePolicy": {
+                      "enableAutomaticOSUpgrade": false,
+                      "disableAutomaticRollback": false
+                  }
+              },
+              "virtualMachineProfile": {
+                  "osProfile": {
+                      "computerNamePrefix": "myTFVM",
+                      "adminUsername": "plankton",
+                      "linuxConfiguration": {
+                          "disablePasswordAuthentication": false,
+                          "ssh": {
+                              "publicKeys": []
+                          },
+                          "provisionVMAgent": true
+                      },
+                      "secrets": []
+                  },
+                  "storageProfile": {
+                      "osDisk": {
+                          "createOption": "FromImage",
+                          "caching": "ReadWrite",
+                          "managedDisk": {
+                              "storageAccountType": "Premium_LRS"
+                          }
+                      },
+                      "imageReference": {
+                          "publisher": "Canonical",
+                          "offer": "UbuntuServer",
+                          "sku": "16.04-LTS",
+                          "version": "latest"
+                      },
+                      "dataDisks": [
+                          {
+                              "lun": 0,
+                              "createOption": "Empty",
+                              "caching": "ReadWrite",
+                              "managedDisk": {
+                                  "storageAccountType": "Standard_LRS"
+                              },
+                              "diskSizeGB": 10
+                          }
+                      ]
+                  },
+                  "networkProfile": {
+                      "networkInterfaceConfigurations": [
+                          {
+                              "name": "terraformnetworkprofile",
+                              "properties": {
+                                  "primary": true,
+                                  "enableAcceleratedNetworking": false,
+                                  "dnsSettings": {
+                                      "dnsServers": []
+                                  },
+                                  "enableIPForwarding": false,
+                                  "ipConfigurations": [
+                                      {
+                                          "name": "TestIPConfiguration",
+                                          "properties": {
+                                              "primary": true,
+                                              "subnet": {
+                                                  "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_myTFVnet_name'), 'backend')]"
+                                              },
+                                              "privateIPAddressVersion": "IPv4",
+                                              "applicationGatewayBackendAddressPools": [
+                                                  {
+                                                      "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_example_appgateway_name')), '/backendAddressPools/myTFVnet-beap')]"
+                                                  }
+                                              ]
+                                          }
+                                      }
+                                  ]
+                              }
+                          }
+                      ]
+                  },
+                  "extensionProfile": {
+                      "extensions": [
+                          {
+                              "name": "CustomScript",
+                              "properties": {
+                                  "autoUpgradeMinorVersion": true,
+                                  "publisher": "Microsoft.Azure.Extensions",
+                                  "type": "CustomScript",
+                                  "typeHandlerVersion": "2.0",
+                                  "settings": {
+                                      "commandToExecute": "./install_nginx.sh",
+                                      "fileUris": [
+                                          "https://raw.githubusercontent.com/Azure/azure-docs-powershell-samples/master/application-gateway/iis/install_nginx.sh"
+                                      ]
+                                  }
+                              }
+                          }
+                      ]
+                  }
+              },
+              "overprovision": true,
+              "doNotRunExtensionsOnOverprovisionedVMs": false
+          }
+      },
+      {
+          "type": "Microsoft.Compute/virtualMachineScaleSets/virtualMachines",
+          "apiVersion": "2019-03-01",
+          "name": "[concat(parameters('virtualMachineScaleSets_myTFVMSS_1_name'), '/0')]",
+          "location": "eastus",
+          "dependsOn": [
+              "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('virtualMachineScaleSets_myTFVMSS_1_name'))]",
+              "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_myTFVnet_name'), 'backend')]",
+              "[resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_example_appgateway_name'))]"
+          ],
+          "sku": {
+              "name": "Standard_DS1_v2",
+              "tier": "Standard"
+          },
+          "properties": {
+              "networkProfileConfiguration": {
+                  "networkInterfaceConfigurations": [
+                      {
+                          "name": "terraformnetworkprofile",
+                          "properties": {
+                              "primary": true,
+                              "enableAcceleratedNetworking": false,
+                              "dnsSettings": {
+                                  "dnsServers": []
+                              },
+                              "enableIPForwarding": false,
+                              "ipConfigurations": [
+                                  {
+                                      "name": "TestIPConfiguration",
+                                      "properties": {
+                                          "primary": true,
+                                          "subnet": {
+                                              "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_myTFVnet_name'), 'backend')]"
+                                          },
+                                          "privateIPAddressVersion": "IPv4",
+                                          "applicationGatewayBackendAddressPools": [
+                                              {
+                                                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_example_appgateway_name')), '/backendAddressPools/myTFVnet-beap')]"
+                                              }
+                                          ]
+                                      }
+                                  }
+                              ]
+                          }
+                      }
+                  ]
+              },
+              "hardwareProfile": {},
+              "storageProfile": {
+                  "imageReference": {
+                      "publisher": "Canonical",
+                      "offer": "UbuntuServer",
+                      "sku": "16.04-LTS",
+                      "version": "16.04.201907241"
+                  },
+                  "osDisk": {
+                      "osType": "Linux",
+                      "name": "myTFVMSS-1_myTFVMSS-1_0_OsDisk_1_14ce959b6f5c4538981d543ff783e32b",
+                      "createOption": "FromImage",
+                      "caching": "ReadWrite",
+                      "managedDisk": {
+                          "storageAccountType": "Premium_LRS",
+                          "id": "[parameters('disks_myTFVMSS_1_myTFVMSS_1_0_OsDisk_1_14ce959b6f5c4538981d543ff783e32b_externalid')]"
+                      },
+                      "diskSizeGB": 30
+                  },
+                  "dataDisks": [
+                      {
+                          "lun": 0,
+                          "name": "myTFVMSS-1_myTFVMSS-1_0_disk2_645f7da8ca704b18bd5636a6f0fe544d",
+                          "createOption": "Empty",
+                          "caching": "ReadWrite",
+                          "managedDisk": {
+                              "storageAccountType": "Standard_LRS",
+                              "id": "[parameters('disks_myTFVMSS_1_myTFVMSS_1_0_disk2_645f7da8ca704b18bd5636a6f0fe544d_externalid')]"
+                          },
+                          "diskSizeGB": 10,
+                          "toBeDetached": false
+                      }
+                  ]
+              },
+              "osProfile": {
+                  "computerName": "myTFVM000000",
+                  "adminUsername": "plankton",
+                  "linuxConfiguration": {
+                      "disablePasswordAuthentication": false,
+                      "ssh": {
+                          "publicKeys": []
+                      },
+                      "provisionVMAgent": true
+                  },
+                  "secrets": [],
+                  "allowExtensionOperations": true
+              },
+              "networkProfile": {
+                  "networkInterfaces": [
+                      {
+                          "id": "[concat(resourceId('Microsoft.Compute/virtualMachineScaleSets/virtualMachines', parameters('virtualMachineScaleSets_myTFVMSS_1_name'), '0'), '/networkInterfaces/terraformnetworkprofile')]"
+                      }
+                  ]
+              }
+          }
+      },
+      {
+          "type": "Microsoft.Compute/virtualMachineScaleSets/virtualMachines",
+          "apiVersion": "2019-03-01",
+          "name": "[concat(parameters('virtualMachineScaleSets_myTFVMSS_1_name'), '/2')]",
+          "location": "eastus",
+          "dependsOn": [
+              "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('virtualMachineScaleSets_myTFVMSS_1_name'))]",
+              "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_myTFVnet_name'), 'backend')]",
+              "[resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_example_appgateway_name'))]"
+          ],
+          "sku": {
+              "name": "Standard_DS1_v2",
+              "tier": "Standard"
+          },
+          "properties": {
+              "networkProfileConfiguration": {
+                  "networkInterfaceConfigurations": [
+                      {
+                          "name": "terraformnetworkprofile",
+                          "properties": {
+                              "primary": true,
+                              "enableAcceleratedNetworking": false,
+                              "dnsSettings": {
+                                  "dnsServers": []
+                              },
+                              "enableIPForwarding": false,
+                              "ipConfigurations": [
+                                  {
+                                      "name": "TestIPConfiguration",
+                                      "properties": {
+                                          "primary": true,
+                                          "subnet": {
+                                              "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_myTFVnet_name'), 'backend')]"
+                                          },
+                                          "privateIPAddressVersion": "IPv4",
+                                          "applicationGatewayBackendAddressPools": [
+                                              {
+                                                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_example_appgateway_name')), '/backendAddressPools/myTFVnet-beap')]"
+                                              }
+                                          ]
+                                      }
+                                  }
+                              ]
+                          }
+                      }
+                  ]
+              },
+              "hardwareProfile": {},
+              "storageProfile": {
+                  "imageReference": {
+                      "publisher": "Canonical",
+                      "offer": "UbuntuServer",
+                      "sku": "16.04-LTS",
+                      "version": "16.04.201907241"
+                  },
+                  "osDisk": {
+                      "osType": "Linux",
+                      "name": "myTFVMSS-1_myTFVMSS-1_2_OsDisk_1_405463df76f847a4ad8fa307f018caee",
+                      "createOption": "FromImage",
+                      "caching": "ReadWrite",
+                      "managedDisk": {
+                          "storageAccountType": "Premium_LRS",
+                          "id": "[parameters('disks_myTFVMSS_1_myTFVMSS_1_2_OsDisk_1_405463df76f847a4ad8fa307f018caee_externalid')]"
+                      },
+                      "diskSizeGB": 30
+                  },
+                  "dataDisks": [
+                      {
+                          "lun": 0,
+                          "name": "myTFVMSS-1_myTFVMSS-1_2_disk2_7992baf78aad4035b11b16e3ae39bebb",
+                          "createOption": "Empty",
+                          "caching": "ReadWrite",
+                          "managedDisk": {
+                              "storageAccountType": "Standard_LRS",
+                              "id": "[parameters('disks_myTFVMSS_1_myTFVMSS_1_2_disk2_7992baf78aad4035b11b16e3ae39bebb_externalid')]"
+                          },
+                          "diskSizeGB": 10,
+                          "toBeDetached": false
+                      }
+                  ]
+              },
+              "osProfile": {
+                  "computerName": "myTFVM000002",
+                  "adminUsername": "plankton",
+                  "linuxConfiguration": {
+                      "disablePasswordAuthentication": false,
+                      "ssh": {
+                          "publicKeys": []
+                      },
+                      "provisionVMAgent": true
+                  },
+                  "secrets": [],
+                  "allowExtensionOperations": true
+              },
+              "networkProfile": {
+                  "networkInterfaces": [
+                      {
+                          "id": "[concat(resourceId('Microsoft.Compute/virtualMachineScaleSets/virtualMachines', parameters('virtualMachineScaleSets_myTFVMSS_1_name'), '2'), '/networkInterfaces/terraformnetworkprofile')]"
+                      }
+                  ]
+              }
+          }
+      },
+      {
+          "type": "Microsoft.Network/networkInterfaces",
+          "apiVersion": "2019-04-01",
+          "name": "[parameters('networkInterfaces_myNIC_name')]",
+          "location": "eastus",
+          "dependsOn": [
+              "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_jumpbox_pip_name'))]",
+              "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_myTFVnet_name'), 'backend')]",
+              "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_SSH_name'))]"
+          ],
+          "properties": {
+              "provisioningState": "Succeeded",
+              "resourceGuid": "f91d515a-fb84-4c53-bc75-75e417dd7399",
+              "ipConfigurations": [
+                  {
+                      "name": "[concat(parameters('networkInterfaces_myNIC_name'), 'Confg')]",
+                      "etag": "W/\"3de208e8-bde4-4081-924c-823b4f9e9964\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "privateIPAddress": "10.0.2.4",
+                          "privateIPAllocationMethod": "Dynamic",
+                          "publicIPAddress": {
+                              "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_jumpbox_pip_name'))]"
+                          },
+                          "subnet": {
+                              "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_myTFVnet_name'), 'backend')]"
+                          },
+                          "primary": true,
+                          "privateIPAddressVersion": "IPv4"
+                      }
+                  }
+              ],
+              "dnsSettings": {
+                  "dnsServers": [],
+                  "appliedDnsServers": [],
+                  "internalDomainNameSuffix": "4wh1zzkpeqoujn4n45i53pt4qh.bx.internal.cloudapp.net"
+              },
+              "macAddress": "00-0D-3A-15-D6-DF",
+              "enableAcceleratedNetworking": false,
+              "enableIPForwarding": false,
+              "networkSecurityGroup": {
+                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_SSH_name'))]"
+              },
+              "primary": true,
+              "tapConfigurations": []
+          }
+      },
+      {
+          "type": "Microsoft.Network/applicationGateways",
+          "apiVersion": "2019-04-01",
+          "name": "[parameters('applicationGateways_example_appgateway_name')]",
+          "location": "eastus",
+          "dependsOn": [
+              "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_myTFVnet_name'), 'frontend')]",
+              "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_example_pip_name'))]",
+              "[resourceId('Microsoft.Compute/virtualMachineScaleSets/virtualMachines', parameters('virtualMachineScaleSets_myTFVMSS_1_name'), '0')]",
+              "[resourceId('Microsoft.Compute/virtualMachineScaleSets/virtualMachines', parameters('virtualMachineScaleSets_myTFVMSS_1_name'), '2')]"
+          ],
+          "properties": {
+              "provisioningState": "Succeeded",
+              "resourceGuid": "c1b27d3f-0f37-4322-ba49-ee1ad908875b",
+              "sku": {
+                  "name": "Standard_Small",
+                  "tier": "Standard",
+                  "capacity": 2
+              },
+              "gatewayIPConfigurations": [
+                  {
+                      "name": "my-gateway-ip-configuration",
+                      "etag": "W/\"6108328f-c668-4e95-ad50-ccf1c293d950\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "subnet": {
+                              "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_myTFVnet_name'), 'frontend')]"
+                          }
+                      },
+                      "type": "Microsoft.Network/applicationGateways/gatewayIPConfigurations"
+                  }
+              ],
+              "sslCertificates": [],
+              "authenticationCertificates": [],
+              "frontendIPConfigurations": [
+                  {
+                      "name": "myTFVnet-feip",
+                      "etag": "W/\"6108328f-c668-4e95-ad50-ccf1c293d950\"",
+                      "type": "Microsoft.Network/applicationGateways/frontendIPConfigurations",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "privateIPAllocationMethod": "Dynamic",
+                          "publicIPAddress": {
+                              "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_example_pip_name'))]"
+                          }
+                      }
+                  }
+              ],
+              "frontendPorts": [
+                  {
+                      "name": "myTFVnet-feport",
+                      "etag": "W/\"6108328f-c668-4e95-ad50-ccf1c293d950\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "port": 80
+                      },
+                      "type": "Microsoft.Network/applicationGateways/frontendPorts"
+                  }
+              ],
+              "backendAddressPools": [
+                  {
+                      "name": "myTFVnet-beap",
+                      "etag": "W/\"6108328f-c668-4e95-ad50-ccf1c293d950\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "backendIPConfigurations": [
+                              {
+                                  "id": "[concat(resourceId('Microsoft.Compute/virtualMachineScaleSets/virtualMachines', parameters('virtualMachineScaleSets_myTFVMSS_1_name'), '0'), '/networkInterfaces/terraformnetworkprofile/ipConfigurations/TestIPConfiguration')]"
+                              },
+                              {
+                                  "id": "[concat(resourceId('Microsoft.Compute/virtualMachineScaleSets/virtualMachines', parameters('virtualMachineScaleSets_myTFVMSS_1_name'), '2'), '/networkInterfaces/terraformnetworkprofile/ipConfigurations/TestIPConfiguration')]"
+                              }
+                          ],
+                          "backendAddresses": []
+                      },
+                      "type": "Microsoft.Network/applicationGateways/backendAddressPools"
+                  }
+              ],
+              "backendHttpSettingsCollection": [
+                  {
+                      "name": "myTFVnet-be-htst",
+                      "etag": "W/\"6108328f-c668-4e95-ad50-ccf1c293d950\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "port": 80,
+                          "protocol": "Http",
+                          "cookieBasedAffinity": "Disabled",
+                          "pickHostNameFromBackendAddress": false,
+                          "path": "/",
+                          "requestTimeout": 1
+                      },
+                      "type": "Microsoft.Network/applicationGateways/backendHttpSettingsCollection"
+                  }
+              ],
+              "httpListeners": [
+                  {
+                      "name": "myTFVnet-httplstn",
+                      "etag": "W/\"6108328f-c668-4e95-ad50-ccf1c293d950\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "frontendIPConfiguration": {
+                              "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_example_appgateway_name')), '/frontendIPConfigurations/myTFVnet-feip')]"
+                          },
+                          "frontendPort": {
+                              "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_example_appgateway_name')), '/frontendPorts/myTFVnet-feport')]"
+                          },
+                          "protocol": "Http",
+                          "requireServerNameIndication": false,
+                          "customErrorConfigurations": []
+                      },
+                      "type": "Microsoft.Network/applicationGateways/httpListeners"
+                  }
+              ],
+              "urlPathMaps": [],
+              "requestRoutingRules": [
+                  {
+                      "name": "myTFVnet-rqrt",
+                      "etag": "W/\"6108328f-c668-4e95-ad50-ccf1c293d950\"",
+                      "properties": {
+                          "provisioningState": "Succeeded",
+                          "ruleType": "Basic",
+                          "httpListener": {
+                              "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_example_appgateway_name')), '/httpListeners/myTFVnet-httplstn')]"
+                          },
+                          "backendAddressPool": {
+                              "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_example_appgateway_name')), '/backendAddressPools/myTFVnet-beap')]"
+                          },
+                          "backendHttpSettings": {
+                              "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_example_appgateway_name')), '/backendHttpSettingsCollection/myTFVnet-be-htst')]"
+                          }
+                      },
+                      "type": "Microsoft.Network/applicationGateways/requestRoutingRules"
+                  }
+              ],
+              "probes": [],
+              "rewriteRuleSets": [],
+              "redirectConfigurations": [],
+              "sslPolicy": {
+                  "disabledSslProtocols": []
+              },
+              "enableHttp2": false,
+              "customErrorConfigurations": []
+          }
+      }
+  ]
+}

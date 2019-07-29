@@ -1,73 +1,92 @@
-terraform {
-    required_version = ">= 0.11"
-    backend "azurerm" {
-        storage_account_name = "__terraformstorageaccount__"
-        container_name       = "terraform"
-        key                  = "terraform.tfstate"
-        access_key  ="__storagekey__"
-    }
-}
+#terraform {
+#    required_version = ">= 0.11"
+#    backend "azurerm" {
+#        storage_account_name = "${var.storage_account_name}"
+#        container_name       = "terraform"
+#        key                  = "terraform.tfstate"
+#        access_key           = "${var.storage_account_key}"
+#    }
+#}
 
 provider "azurerm" {
     version = "=1.28.0"
 }
 
-resource "azurerm_resource_group" "test" {
-    name        = "myTF_VSS_rg"
-    location    = "eastus"
+locals {
+    resource_group                 = "${var.service}-${var.env}"
+    vnet                           = "${local.resource_group}-${var.location}-network"
+    frontend_subnet                = "${local.vnet}-subnet-frontend"
+    backend_subnet                 = "${local.vnet}-subnet-backend"
+    lb_public_ip                   = "${local.vnet}-lb-public-ip"
+    application_gateway            = "${local.resource_group}-agw"
+    vmss                           = "${local.resource_group}-vmss"
+    backend_address_pool_name      = "${local.vnet}-beap"
+    frontend_port_name             = "${local.vnet}-feport"
+    frontend_ip_configuration_name = "${local.vnet}-feip"
+    http_setting_name              = "${local.vnet}-be-htst"
+    listener_name                  = "${local.vnet}-httplstn"
+    request_routing_rule_name      = "${local.vnet}-rqrt"
+    redirect_configuration_name    = "${local.vnet}-rdrcfg"
+    common_tags                    = {
+        env      = "${var.env}"
+        app      = "${var.app}"
+        service  = "${var.service}"
+        location = "${var.location}"
+    }
 }
 
-resource "azurerm_virtual_network" "test" {
-    name            = "myTFVnet"
-    address_space   = ["10.0.0.0/16"]
-    location        = "eastus"
-    resource_group_name = "${azurerm_resource_group.test.name}"
+resource "azurerm_resource_group" "this" {
+    name        = "${local.resource_group}"
+    location    = "${var.location}"
+
+    tags        = "${local.common_tags}"
+}
+
+resource "azurerm_virtual_network" "this" {
+    name                = "${local.vnet}"
+    resource_group_name = "${local.resource_group}"
+    location            = "${var.location}"
+    address_space       = "${var.vnet_address_space}"
+
+    tags                = "${local.common_tags}"
 }
 
 resource "azurerm_subnet" "frontend" {
-    name                    = "frontend"
-    resource_group_name     = "${azurerm_resource_group.test.name}"
-    virtual_network_name    = "${azurerm_virtual_network.test.name}"
-    address_prefix          = "10.0.1.0/24"
+    name                    = "${local.frontend_subnet}"
+    resource_group_name     = "${local.resource_group}"
+    address_prefix          = "${var.frontend_subnet_prefix}"
+    virtual_network_name    = "${local.vnet}"
 }
 
 resource "azurerm_subnet" "backend" {
-    name                    = "backend"
-    resource_group_name     = "${azurerm_resource_group.test.name}"
-    virtual_network_name    = "${azurerm_virtual_network.test.name}"
-    address_prefix          = "10.0.2.0/24"
+    name                    = "${local.backend_subnet}"
+    resource_group_name     = "${local.resource_group}"
+    address_prefix          = "${var.backend_subnet_prefix}"
+    virtual_network_name    = "${local.vnet}"
 }
 
-resource "azurerm_public_ip" "test" {
-    name                = "example-pip"
-    resource_group_name = "${azurerm_resource_group.test.name}"
-    location            = "${azurerm_resource_group.test.location}"
+resource "azurerm_public_ip" "lb" {
+    name                = "${local.lb_public_ip}"
+    resource_group_name = "${local.resource_group}"
+    location            = "${var.location}"
     allocation_method   = "Dynamic"
+
+    tags                = "${local.common_tags}"
 }
 
-locals {
-  backend_address_pool_name      = "${azurerm_virtual_network.test.name}-beap"
-  frontend_port_name             = "${azurerm_virtual_network.test.name}-feport"
-  frontend_ip_configuration_name = "${azurerm_virtual_network.test.name}-feip"
-  http_setting_name              = "${azurerm_virtual_network.test.name}-be-htst"
-  listener_name                  = "${azurerm_virtual_network.test.name}-httplstn"
-  request_routing_rule_name      = "${azurerm_virtual_network.test.name}-rqrt"
-  redirect_configuration_name    = "${azurerm_virtual_network.test.name}-rdrcfg"
-}
-
-resource "azurerm_application_gateway" "network" {
-    name            = "example-appgateway"
-    resource_group_name = "${azurerm_resource_group.test.name}"
-    location            = "${azurerm_resource_group.test.location}"
+resource "azurerm_application_gateway" "this" {
+    name                = "${local.application_gateway}"
+    resource_group_name = "${local.resource_group}"
+    location            = "${var.location}"
 
     sku {
-        name        = "Standard_Small"
-        tier        = "Standard"
-        capacity    = 2
+        name     = "${var.application_gateway_sku.name}"
+        tier     = "${var.application_gateway_sku.tier}"
+        capacity = "${var.application_gateway_sku.capacity}"
     }
 
     gateway_ip_configuration {
-        name    = "my-gateway-ip-configuration"
+        name    = "${local.application_gateway}-gw-ip-cfg"
         subnet_id = "${azurerm_subnet.frontend.id}"
     }
 
@@ -78,7 +97,7 @@ resource "azurerm_application_gateway" "network" {
 
     frontend_ip_configuration {
         name                    = "${local.frontend_ip_configuration_name}"
-        public_ip_address_id    = "${azurerm_public_ip.test.id}"
+        public_ip_address_id    = "${azurerm_public_ip.lb.id}"
     }
 
     backend_address_pool {
@@ -108,12 +127,14 @@ resource "azurerm_application_gateway" "network" {
         backend_address_pool_name   = "${local.backend_address_pool_name}"
         backend_http_settings_name  = "${local.http_setting_name}"
     }
+
+    tags                = "${local.common_tags}"
 }
 
-resource "azurerm_virtual_machine_scale_set" "vm" {
-    name                    = "myTFVMSS-1"
-    location                = "${azurerm_resource_group.test.location}"
-    resource_group_name     = "${azurerm_resource_group.test.name}"
+resource "azurerm_virtual_machine_scale_set" "this" {
+    name                    = "${local.vmss}"
+    location                = "${var.location}"
+    resource_group_name     = "${local.resource_group}"
     upgrade_policy_mode     = "Manual"
 
     extension {
@@ -134,16 +155,17 @@ resource "azurerm_virtual_machine_scale_set" "vm" {
     }
 
     sku {
-        name        = "Standard_DS1_v2"
-        tier        = "Standard"
-        capacity    = 2
+        name     = "${var.vmss_sku.name}"
+        tier     = "${var.vmss_sku.tier}"
+        capacity = "${var.vmss_sku.capacity}"
     }
 
     storage_profile_image_reference {
-        publisher = "Canonical"
-        offer     = "UbuntuServer"
-        sku       = "16.04-LTS"
-        version   = "latest"
+        publisher = "${var.vmss_storage_profile_image_reference.publisher}"
+        offer     = "${var.vmss_storage_profile_image_reference.offer}"
+        sku       = "${var.vmss_storage_profile_image_reference.sku}"
+        version   = "${var.vmss_storage_profile_image_reference.version}"
+
     }
 
     storage_profile_os_disk {
@@ -178,22 +200,32 @@ resource "azurerm_virtual_machine_scale_set" "vm" {
             name                                            = "TestIPConfiguration"
             primary                                         = true
             subnet_id                                       = "${azurerm_subnet.backend.id}"
-            application_gateway_backend_address_pool_ids    = ["${azurerm_application_gateway.network.id}/backendAddressPools/${local.backend_address_pool_name}"]
+            application_gateway_backend_address_pool_ids    = ["${azurerm_application_gateway.this.id}/backendAddressPools/${local.backend_address_pool_name}"]
         }
     }
+
+    tags                = "${merge(
+                                local.common_tags,
+                                {
+                                    tier      = "web"
+                                    webserver = "wildfly"
+                                })
+                            }"
 }
 
 resource "azurerm_public_ip" "jumpbox-ip" {
     name                = "jumpbox-pip"
-    resource_group_name = "${azurerm_resource_group.test.name}"
-    location            = "${azurerm_resource_group.test.location}"
+    resource_group_name = "${local.resource_group}"
+    location            = "${var.location}"
     allocation_method   = "Dynamic"
+
+    tags                = "${local.common_tags}"
 }
 
 resource "azurerm_network_security_group" "jumpbox-nsg" {
     name                = "SSH"
-    location            = "eastus"
-    resource_group_name = "${azurerm_resource_group.test.name}"
+    resource_group_name = "${local.resource_group}"
+    location            = "${var.location}"
 
     security_rule {
         name                       = "SSH"
@@ -206,12 +238,14 @@ resource "azurerm_network_security_group" "jumpbox-nsg" {
         source_address_prefix      = "*"
         destination_address_prefix = "*"
     }
+
+    tags                = "${local.common_tags}"
 }
 
 resource "azurerm_network_interface" "jumpbox-nic" {
     name                      = "myNIC"
-    location                  = "eastus"
-    resource_group_name       = "${azurerm_resource_group.test.name}"
+    resource_group_name       = "${local.resource_group}"
+    location                  = "${var.location}"
     network_security_group_id = "${azurerm_network_security_group.jumpbox-nsg.id}"
 
     ip_configuration {
@@ -220,12 +254,14 @@ resource "azurerm_network_interface" "jumpbox-nic" {
         private_ip_address_allocation = "dynamic"
         public_ip_address_id          = "${azurerm_public_ip.jumpbox-ip.id}"
     }
+
+    tags                = "${local.common_tags}"
 }
 
 resource "azurerm_virtual_machine" "jumpbox-vm" {
     name                  = "myTFVM"
-    location              = "eastus"
-    resource_group_name   = "${azurerm_resource_group.test.name}"
+    resource_group_name   = "${local.resource_group}"
+    location              = "${var.location}"
     network_interface_ids = ["${azurerm_network_interface.jumpbox-nic.id}"]
     vm_size               = "Standard_DS1_v2"
 
@@ -253,4 +289,5 @@ resource "azurerm_virtual_machine" "jumpbox-vm" {
         disable_password_authentication = false
     }
 
+    tags                = "${local.common_tags}"
 }
