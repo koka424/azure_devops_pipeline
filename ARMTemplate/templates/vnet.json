@@ -6,7 +6,7 @@
             "type": "string"
         },
         "vnetAddressSpace": {
-            "type": "object",
+            "type": "object"
         },
         "frontendSubnet": {
             "type": "string"
