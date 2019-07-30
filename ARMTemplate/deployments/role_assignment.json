@@ -1,0 +1,46 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": { 
+        "principalId": {
+            "type": "string"
+        },
+        "builtInRoleType": {
+            "type": "string"
+        },
+        "roleNameGuid": {
+            "type": "string",
+            "defaultValue": null
+        } 
+    },
+    "variables": {  
+        "roleAssignmentsTemplateUri":  "https://raw.githubusercontent.com/koka424/azure_devops_pipeline/master/ARMTemplate/templates/vnet.json"
+    },
+    "functions": [  ],
+    "resources": [ 
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "roleAssignmentsTemplate",
+            "apiVersion": "2016-09-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('roleAssignmentsTemplateUri')]",
+                    "contentVersion": "1.0.0.0" 
+                },
+                "parameters": {
+                    "principalId": {
+                        "value": "[parameters('principalId')]"
+                    },
+                    "builtInRoleType": {
+                        "value": "[parameters('builtInRoleType')]"
+                    },
+                    "roleNameGuid": {
+                        "value": "[parameters('roleNameGuid')]"
+                    }
+                }
+            }
+        }
+     ],
+    "outputs": {  }
+}

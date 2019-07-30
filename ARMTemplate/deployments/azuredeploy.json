@@ -85,12 +85,37 @@
             "metadata": {
                 "description": "A hash defining the name, offer, sku, and version of the image for the VMSS."
             }
-        }
-     },
+        },
+        "principalId": {
+            "type": "string",
+            "metadata": {
+                "description": "The principal to assign the role to"
+            }
+        },
+        "builtInRoleType": {
+            "type": "string",
+            "allowedValues": [
+                "Owner",
+                "Contributor",
+                "Reader"
+            ],
+            "metadata": {
+                "description": "Built-in role to assign"
+            }
+        },
+        "roleNameGuid": {
+            "type": "string",
+            "defaultValue": "[newGuid()]",
+            "metadata": {
+                "description": "A new GUID used to identify the role assignment"
+            }
+        } 
+    },
     "variables": {  
         "vnet":                        "[concat(parameters('resourceGroup'), '-', parameters('location'), '-network')]",
         "vnetTemplate":                "templateVnet",
         "vnetTemplateUri":             "https://raw.githubusercontent.com/koka424/azure_devops_pipeline/master/ARMTemplate/templates/vnet.json",
+        "roleAssignmentsTemplateUri":  "https://raw.githubusercontent.com/koka424/azure_devops_pipeline/master/ARMTemplate/templates/vnet.json",
         "frontendSubnet":              "[concat(variables('vnet'), '-subnet-frontend')]",
         "backendSubnet":               "[concat(variables('vnet'), '-subnet-backend')]",
         "lbPublicIp":                  "[concat(variables('vnet'), '-lb-public-ip')]",
@@ -109,10 +134,29 @@
             "service":  "[parameters('service')]",
             "location": "[parameters('location')]"
         }
-
     },
     "functions": [  ],
     "resources": [ 
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "roleAssignmentsTemplate",
+            "apiVersion": "2016-09-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('roleAssignmentsTemplateUri')]",
+                    "contentVersion": "1.0.0.0" 
+                },
+                "parameters": {
+                    "principalId": {
+                        "value": "[parameters('principalId')]"
+                    },
+                    "builtInRoleType": {
+                        "value": "[parameters('builtInRoleType')]"
+                    }
+                }
+            }
+        },
         {
             "type": "Microsoft.Resources/deployments",
             "name": "[variables('vnetTemplate')]",
@@ -121,7 +165,7 @@
                 "mode": "Incremental",
                 "templateLink": {
                     "uri": "[variables('vnetTemplateUri')]",
-                    "contentVersion": "1.0.0.0", 
+                    "contentVersion": "1.0.0.0" 
                 },
                 "parameters": {
                     "vnet": {
@@ -320,7 +364,7 @@
                 ],
                 "backendAddressPools": [
                     {
-                        "name": "[variables('backendAddressPoolName')]",
+                        "name": "[variables('backendAddressPoolName')]"
                     }
                 ],
                 "backendHttpSettingsCollection": [

@@ -3,7 +3,7 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "env": {
-            "value": "dv"
+            "value": "qa"
         },
         "app": {
             "value": "baker"
@@ -13,17 +13,17 @@
         },
         "vnetAddressSpace": { 
             "value": {
-                "addressPrefixes": [ "10.0.0.0/23" ]
+                "addressPrefixes": [ "10.0.2.0/23" ]
             }
         },
         "frontendSubnetPrefix": {
-            "value": "10.0.0.0/24"
+            "value": "10.0.2.0/24"
         },
         "backendSubnetPrefix": {
-            "value": "10.0.1.0/24"
+            "value": "10.0.3.0/24"
         },
         "builtInRoleType": {
-            "value": "Contributor"
+            "value": "Reader"
         }
     }
 }
