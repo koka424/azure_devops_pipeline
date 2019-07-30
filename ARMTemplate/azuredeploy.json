@@ -2,36 +2,133 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": { 
+        "resourceGroup": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().name]",
+            "metadata": {
+                "description": "The resource group being deployed to."
+            }
+        },
         "location": {
             "type": "string",
-            "defaultValue": "[resourceGroup().location]"
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "The location/region where the virtual network is created. Changing this forces a new resource to be created."
+            }
+        },
+        "env": {
+            "type": "string",
+            "metadata": {
+                "description": "The environment the deployment belongs to."
+            }
+        },
+        "app": {
+            "type": "string",
+            "metadata": {
+                "description": "The application the deployment is part of."
+            }
+        },
+        "service": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the service to be deployed."
+            }
+        },
+        "vnetAddressSpace": {
+            "type": "object",
+            "metadata": {
+                "description": "The address space of the VNET to use for this deployment."
+            }
+        },
+        "frontendSubnetPrefix": {
+            "type": "string",
+            "metadata": {
+                "description": "The address prefix of the frontend subnet."
+            }
+        },
+        "backendSubnetPrefix": {
+            "type": "string",
+            "metadata": {
+                "description": "The address prefix of the backend subnet."
+            }
+        },
+        "applicationGatewaySku": {
+           "type": "object",
+           "defaultValue": {
+               "name": "Standard_Small",
+               "tier": "Standard",
+               "capacity": 2
+           },
+           "metadata": {
+               "description": "A hash defining the name, tier, and capacity of the SKU."
+           } 
+        },
+        "vmssSku": {
+            "type": "object",
+            "defaultValue": {
+                "name": "Standard_B1s",
+                "tier": "Standard",
+                "capacity": 2
+            },
+            "metadata": {
+                "description": "A hash defining the name, tier, and capacity of the SKU."
+            }
+        },
+        "vmssStorageProfileImageReference": {
+            "type": "object",
+            "defaultValue": {
+                "publisher": "Canonical",
+                "offer":     "UbuntuServer",
+                "sku":       "16.04-LTS",
+                "version":   "latest"
+            },
+            "metadata": {
+                "description": "A hash defining the name, offer, sku, and version of the image for the VMSS."
+            }
         }
      },
-    "variables": {  },
+    "variables": {  
+        "vnet":                        "[concat(parameters('resourceGroup'), '-', parameters('location'), '-network')]",
+        "frontendSubnet":              "[concat(variables('vnet'), '-subnet-frontend')]",
+        "backendSubnet":               "[concat(variables('vnet'), '-subnet-backend')]",
+        "lbPublicIp":                  "[concat(variables('vnet'), '-lb-public-ip')]",
+        "applicationGateway":          "[concat(parameters('resourceGroup'), '-agw')]",
+        "vmss":                        "[concat(parameters('resourceGroup'), '-vmss')]",
+        "backendAddressPoolName":      "[concat(variables('vnet'), '-beap')]",
+        "frontendPortName":            "[concat(variables('vnet'), '-feport')]",
+        "frontendIpConfigurationName": "[concat(variables('vnet'), '-feip')]",
+        "httpSettingName":             "[concat(variables('vnet'), '-be-htst')]",
+        "listenerName":                "[concat(variables('vnet'), '-httplstn')]",
+        "requestRoutingRuleName":      "[concat(variables('vnet'), '-rqrt')]",
+        "redirectConfigurationName":   "[concat(variables('vnet'), '-rdrcfg')]",
+        "commonTags": {
+            "env":      "[parameters('env')]",
+            "app":      "[parameters('app')]",
+            "service":  "[parameters('service')]",
+            "location": "[parameters('location')]"
+        }
+
+    },
     "functions": [  ],
     "resources": [ 
         {
             "type": "Microsoft.Network/virtualNetworks",
-            "name": "test-arm-rg-dev-network",
+            "name": "[variables('vnet')]",
             "apiVersion": "2019-04-01",
             "location": "[parameters('location')]",
             "properties": {
-                "addressSpace": {
-                    "addressPrefixes":[
-                        "10.0.0.0/16"
-                    ]
-                },
+                "addressSpace": "[parameters('vnetAddressSpace')]",
                     "subnets": [
                         {
-                        "name": "test-arm-rg-dev-network-frontend",
+                        "name": "[variables('frontendSubnet')]",
                         "properties": {
-                            "addressPrefix": "10.0.1.0/24"
+                            "addressPrefix": "[parameters('frontendSubnetPrefix')]"
                         }
                     },
                     {
-                        "name": "test-arm-rg-dev-network-backend",
+                        "name": "[variables('backendSubnet')]",
                         "properties": {
-                            "addressPrefix": "10.0.2.0/24"
+                            "addressPrefix": "[parameters('backendSubnetPrefix')]"
                         }
                     }
                 ]
@@ -40,7 +137,7 @@
         {
             "type": "Microsoft.Network/publicIPAddresses",
             "apiVersion": "2019-04-01",
-            "name": "test-arm-rg-dev-lb-ip",
+            "name": "[variables('lbPublicIp')]",
             "location": "[parameters('location')]",
             "sku": {
                 "name": "Basic",
@@ -96,7 +193,7 @@
             "location": "[parameters('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/publicIPAddresses', 'test-arm-rg-dev-jumpbox-ip')]",
-                "[resourceId('Microsoft.Network/virtualNetworks', 'test-arm-rg-dev-network')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnet'))]",
                 "[resourceId('Microsoft.Network/networkSecurityGroups', 'test-arm-rg-dev-jumpbox-sg')]"
             ],
             "properties": {
@@ -109,7 +206,7 @@
                                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'test-arm-rg-dev-jumpbox-ip')]"
                             },
                             "subnet": {
-                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'test-arm-rg-dev-network', 'test-arm-rg-dev-network-backend')]"
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnet'), variables('backendSubnet'))]"
                             }
                         }
                     }
@@ -174,41 +271,37 @@
         {
             "type": "Microsoft.Network/applicationGateways",
             "apiVersion": "2019-04-01",
-            "name": "test-arm-rg-dev-ag",
+            "name": "[variables('applicationGateway')]",
             "location": "[parameters('location')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', 'test-arm-rg-dev-network')]",
-                "[resourceId('Microsoft.Network/publicIPAddresses', 'test-arm-rg-dev-lb-ip')]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnet'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIp'))]"
             ],
             "properties": {
-                "sku": {
-                    "name": "Standard_Small",
-                    "tier": "Standard",
-                    "capacity": 2
-                },
+                "sku": "[parameters('applicationGatewaySku')]",
                 "gatewayIPConfigurations": [
                     {
-                        "name": "test-arm-rg-dev-ag-ipconfig",
+                        "name": "[concat(variables('applicationGateway'), '-gw-ip-cfg')]",
                         "properties": {
                             "subnet": {
-                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'test-arm-rg-dev-network', 'test-arm-rg-dev-network-frontend')]"
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnet'), variables('frontendSubnet'))]"
                             }
                         }
                     }
                 ],
                 "frontendIPConfigurations": [
                     {
-                        "name": "test-arm-rg-dev-ag-feip",
+                        "name": "[variables('frontendIpConfigurationName')]",
                         "properties": {
                             "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'test-arm-rg-dev-lb-ip')]"
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIp'))]"
                             }
                         }
                     }
                 ],
                 "frontendPorts": [
                     {
-                        "name": "test-arm-rg-dev-ag-feport",
+                        "name": "[variables('frontendPortName')]",
                         "properties": {
                             "port": 80
                         }
@@ -216,12 +309,12 @@
                 ],
                 "backendAddressPools": [
                     {
-                        "name": "test-arm-rg-dev-ag-beap"
+                        "name": "[variables('backendAddressPoolName')]",
                     }
                 ],
                 "backendHttpSettingsCollection": [
                     {
-                        "name": "test-arm-rg-dev-ag-be-htst",
+                        "name": "[variables('httpSettingName')]",
                         "properties": {
                             "port": 80,
                             "protocol": "Http",
@@ -231,13 +324,13 @@
                 ],
                 "httpListeners": [
                     {
-                        "name": "test-arm-rg-dev-ag-httplstn",
+                        "name": "[variables('listenerName')]",
                         "properties": {
                             "frontendIPConfiguration": {
-                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag'), '/frontendIPConfigurations/test-arm-rg-dev-ag-feip')]"
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('applicationGateway')), concat('/frontendIPConfigurations/', variables('frontendIpConfigurationName')))]"
                             },
                             "frontendPort": {
-                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag'), '/frontendPorts/test-arm-rg-dev-ag-feport')]"
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('applicationGateway')), concat('/frontendPorts/', variables('frontendPortName')))]"
                             },
                             "protocol": "Http",
                             "SslCertificate": null
@@ -246,17 +339,17 @@
                 ],
                 "requestRoutingRules": [
                     {
-                        "name": "test-arm-rg-dev-ag-rqrt",
+                        "name": "[variables('requestRoutingRuleName')]",
                         "properties": {
                             "ruleType": "Basic",
                             "httpListener": {
-                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag'), '/httpListeners/test-arm-rg-dev-ag-httplstn')]"
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('applicationGateway')), concat('/httpListeners/', variables('listenerName')))]"
                             },
                             "backendAddressPool": {
-                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag'), '/backendAddressPools/test-arm-rg-dev-ag-beap')]"
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('applicationGateway')), concat('/backendAddressPools/', variables('backendAddressPoolName')))]"
                             },
                             "backendHttpSettings": {
-                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag'), '/backendHttpSettingsCollection/test-arm-rg-dev-ag-be-htst')]"
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('applicationGateway')), concat('/backendHttpSettingsCollection/', variables('httpSettingName')))]"
                             }
                         }
                     }
@@ -266,17 +359,13 @@
         {
             "type": "Microsoft.Compute/virtualMachineScaleSets",
             "apiVersion": "2019-03-01",
-            "name": "test-arm-rg-dev-vmss",
+            "name": "[variables('vmss')]",
             "location": "[parameters('location')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', 'test-arm-rg-dev-network')]",
-                "[resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag')]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnet'))]",
+                "[resourceId('Microsoft.Network/applicationGateways', variables('applicationGateway'))]"
             ],
-            "sku": {
-                "name": "Standard_DS1_v2",
-                "tier": "Standard",
-                "capacity": 2
-            },
+            "sku": "[parameters('vmssSku')]",
             "properties": {
                 "singlePlacementGroup": true,
                 "upgradePolicy": {
@@ -288,7 +377,7 @@
                 },
                 "virtualMachineProfile": {
                     "osProfile": {
-                        "computerNamePrefix": "test-arm-rg-dev-vmss-vm",
+                        "computerNamePrefix": "[concat(variables('vmss'), '-vm')]",
                         "adminUsername": "plankton",
                         "adminPassword": "Password1234!",
                         "linuxConfiguration": {
@@ -303,12 +392,7 @@
                                 "storageAccountType": "Premium_LRS"
                             }
                         },
-                        "imageReference": {
-                            "publisher": "Canonical",
-                            "offer": "UbuntuServer",
-                            "sku": "16.04-LTS",
-                            "version": "latest"
-                        },
+                        "imageReference": "[parameters('vmssStorageProfileImageReference')]",
                         "dataDisks": [
                             {
                                 "lun": 0,
@@ -324,19 +408,19 @@
                     "networkProfile": {
                         "networkInterfaceConfigurations": [
                             {
-                                "name": "test-arm-rg-dev-vmss-np",
+                                "name": "[concat(variables('vmss'), '-nip')]",
                                 "properties": {
                                     "primary": true,
                                     "ipConfigurations": [
                                         {
-                                            "name": "test-arm-rg-dev-vmss-np-ipconfig",
+                                            "name": "[concat(variables('vmss'), '-np-ipconfig')]",
                                             "properties": {
                                                 "subnet": {
-                                                    "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'test-arm-rg-dev-network', 'test-arm-rg-dev-network-backend')]"
+                                                    "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnet'), variables('backendSubnet'))]"
                                                 },
                                                 "applicationGatewayBackendAddressPools": [
                                                     {
-                                                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'test-arm-rg-dev-ag'), '/backendAddressPools/test-arm-rg-dev-ag-beap')]"
+                                                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('applicationGateway')), concat('/backendAddressPools/', variables('backendAddressPoolName')))]"
                                                     }
                                                 ]
                                             }
