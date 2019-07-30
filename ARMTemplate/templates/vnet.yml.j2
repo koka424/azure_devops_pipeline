@@ -1,0 +1,14 @@
+{% for net in vnet %}}
+type: Microsoft.Network/virtualNetworks
+name: "[parameters('vnet')]"
+apiVersion: '2019-04-01'
+location: '[resourceGroup().location]'
+properties:
+  addressSpace: "[{{ vnetAddressSpace }}]"
+  subnets:
+    - name: "[{{ frontendSubnet }}]"
+      properties:
+        addressPrefix: "[{{ frontendSubnetPrefix }}]"
+    - name: "[{{ frontendSubnetPrefix }}]"
+      properties:
+        addressPrefix: "[{{ backendSubnetPrefix }}]"

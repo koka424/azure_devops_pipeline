@@ -1,0 +1,19 @@
+$schema: 'https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#'
+contentVersion: 1.0.0.0
+parameters:
+  env:
+    value: qa
+  app:
+    value: baker
+  service:
+    value: auth-api
+  vnetAddressSpace:
+    value:
+      addressPrefixes:
+        - 10.0.2.0/23
+  frontendSubnetPrefix:
+    value: 10.0.2.0/24
+  backendSubnetPrefix:
+    value: 10.0.3.0/24
+  builtInRoleType:
+    value: Reader
