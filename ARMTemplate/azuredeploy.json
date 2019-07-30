@@ -89,6 +89,8 @@
      },
     "variables": {  
         "vnet":                        "[concat(parameters('resourceGroup'), '-', parameters('location'), '-network')]",
+        "vnetTemplate":                "templateVnet",
+        "vnetTemplateUri":             "https://raw.githubusercontent.com/koka424/azure_devops_pipeline/master/ARMTemplate/templates/vnet.json",
         "frontendSubnet":              "[concat(variables('vnet'), '-subnet-frontend')]",
         "backendSubnet":               "[concat(variables('vnet'), '-subnet-backend')]",
         "lbPublicIp":                  "[concat(variables('vnet'), '-lb-public-ip')]",
@@ -112,26 +114,35 @@
     "functions": [  ],
     "resources": [ 
         {
-            "type": "Microsoft.Network/virtualNetworks",
-            "name": "[variables('vnet')]",
-            "apiVersion": "2019-04-01",
-            "location": "[parameters('location')]",
+            "type": "Microsoft.Resources/deployments",
+            "name": "[variables('vnetTemplate')]",
+            "apiVersion": "2016-09-01",
             "properties": {
-                "addressSpace": "[parameters('vnetAddressSpace')]",
-                    "subnets": [
-                        {
-                        "name": "[variables('frontendSubnet')]",
-                        "properties": {
-                            "addressPrefix": "[parameters('frontendSubnetPrefix')]"
-                        }
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('vnetTemplateUri')]",
+                    "contentVersion": "1.0.0.0", 
+                },
+                "parameters": {
+                    "vnet": {
+                        "value": "[variables('vnet')]"
                     },
-                    {
-                        "name": "[variables('backendSubnet')]",
-                        "properties": {
-                            "addressPrefix": "[parameters('backendSubnetPrefix')]"
-                        }
+                    "vnetAddressSpace": {
+                        "value": "[parameters('vnetAddressSpace')]"
+                    },
+                    "frontendSubnet": {
+                        "value": "[variables('frontendSubnet')]"
+                    },
+                    "backendSubnet": {
+                        "value": "[variables('backendSubnet')]"
+                    },
+                    "frontendSubnetPrefix": {
+                        "value": "[parameters('frontendSubnetPrefix')]"
+                    },
+                    "backendSubnetPrefix": {
+                        "value": "[parameters('backendSubnetPrefix')]"
                     }
-                ]
+                }
             }
         },
         {
@@ -193,7 +204,7 @@
             "location": "[parameters('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/publicIPAddresses', 'test-arm-rg-dev-jumpbox-ip')]",
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnet'))]",
+                "[resourceId('Microsoft.Resources/deployments', variables('vnetTemplate'))]",
                 "[resourceId('Microsoft.Network/networkSecurityGroups', 'test-arm-rg-dev-jumpbox-sg')]"
             ],
             "properties": {
@@ -274,7 +285,7 @@
             "name": "[variables('applicationGateway')]",
             "location": "[parameters('location')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnet'))]",
+                "[resourceId('Microsoft.Resources/deployments', variables('vnetTemplate'))]",
                 "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIp'))]"
             ],
             "properties": {
@@ -362,7 +373,7 @@
             "name": "[variables('vmss')]",
             "location": "[parameters('location')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnet'))]",
+                "[resourceId('Microsoft.Resources/deployments', variables('vnetTemplate'))]",
                 "[resourceId('Microsoft.Network/applicationGateways', variables('applicationGateway'))]"
             ],
             "sku": "[parameters('vmssSku')]",

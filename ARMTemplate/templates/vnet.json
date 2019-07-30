@@ -46,11 +46,5 @@
                 ]
             }
         }
-    ],
-    "outputs": {
-        "vnetInfo": {
-            "value": "[reference(concat('Microsoft.Network/virtualNetworks/', parameters('vnet')), providers('Microsoft.Network', 'virtualNetworks').apiVersions[0])]",
-            "type": "object"
-        }
-    }
+    ]
 }
