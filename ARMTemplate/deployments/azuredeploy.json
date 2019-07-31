@@ -61,7 +61,7 @@
         },
         "roleNameGuid": {
             "type": "string",
-            "defaultValue": "[newGuid()]"
+            "defaultValue": "[guid(resourceGroup().id, parameters('principalId'))]",
         }
     },
     "variables": {
