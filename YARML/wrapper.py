@@ -14,7 +14,7 @@ def mandatory(input):
     raise Exception('Expected a value')
 
 loader = FileSystemLoader(os.path.join(CURRENT_PATH, 'templates'))
-env = Environment(autoescape=True, loader=loader)
+env = Environment(loader=loader)
 env.filters['mandatory'] = mandatory
 
 def load_params(env):
@@ -41,11 +41,11 @@ def main():
 
   rendered_templates = load_templates(params)
   template_data = {**params, **rendered_templates}
-  
-  deploy_template = os.path.join(CURRENT_PATH, 'deployments', 'azuredeploy.yml.j2')
+
+  deploy_template = os.path.join(CURRENT_PATH, 'deployments', 'vnetdeploy.yml.j2')
   with open(deploy_template, 'r') as f:
     template = Template(f.read())
-  
+
   final_deploy_definition = template.render(template_data)
 
   with open('FinalDeploy.json', 'w') as f:

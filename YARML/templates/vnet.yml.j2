@@ -1,0 +1,14 @@
+type: Microsoft.Network/virtualNetworks
+name: "[variables('vnet')]"
+apiVersion: '2019-04-01'
+location: '[resourceGroup().location]'
+properties:
+  addressSpace: 
+    addressPrefixes: {{ vnetAddressSpace.addressPrefixes }}
+  subnets:
+    - name: "{{ frontendSubnet }}"
+      properties:
+        addressPrefix: "{{ frontendSubnetPrefix }}"
+    - name: "{{ backendSubnet }}"
+      properties:
+        addressPrefix: "{{ backendSubnetPrefix }}"

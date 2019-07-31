@@ -4,3 +4,4 @@
 *.backup
 .terraform.tfstate.lock.info
 secrets.json
+.vscode

@@ -42,13 +42,19 @@ resource "azurerm_resource_group" "this" {
     tags        = "${local.common_tags}"
 }
 
-resource "azurerm_virtual_network" "this" {
-    name                = "${local.vnet}"
-    resource_group_name = "${local.resource_group}"
-    location            = "${var.location}"
-    address_space       = "${var.vnet_address_space}"
+#resource "azurerm_virtual_network" "this" {
+#    name                = "${local.vnet}"
+#    resource_group_name = "${local.resource_group}"
+#    location            = "${var.location}"
+#    address_space       = "${var.vnet_address_space}"
+#
+#    tags                = "${local.common_tags}"
+#}
 
-    tags                = "${local.common_tags}"
+module "component_vnet" {
+    source = "../../component/vnet/main.tf"
+
+    resource_group_name = "${local.resource_group}"
 }
 
 resource "azurerm_subnet" "frontend" {
