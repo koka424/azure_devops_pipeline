@@ -37,11 +37,6 @@
         },
         "applicationGatewaySku": {
             "type": "object",
-            "defaultValue": {
-                "name": "Standard_Small",
-                "tier": "Standard",
-                "capacity": 2
-            },
             "metadata": {
                 "description": "A hash defining the name, tier, and capacity of the SKU."
             }

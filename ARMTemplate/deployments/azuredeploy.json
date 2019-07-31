@@ -23,11 +23,46 @@
         "vnetAddressSpace":                 {"type": "object"},
         "frontendSubnetPrefix":             {"type": "string"},
         "backendSubnetPrefix":              {"type": "string"},
-        "applicationGatewaySku":            {"type": "object", "defaultValue": {}},
-        "vmssSku":                          {"type": "object", "defaultValue": {}},
-        "vmssStorageProfileImageReference": {"type": "object", "defaultValue": {}},
-        "principalId":                      {"type": "string", "defaultValue": ""},
-        "builtInRoleType":                  {"type": "string", "defaultValue": ""}
+        "applicationGatewaySku": {
+            "type": "object",
+            "defaultValue": {
+                "name": "Standard_Small",
+                "tier": "Standard",
+                "capacity": 2
+            }
+        },
+        "vmssSku": {
+            "type": "object",
+            "defaultValue": {
+                "name": "Standard_B1s",
+                "tier": "Standard",
+                "capacity": 2
+            }
+        },
+        "vmssStorageProfileImageReference": {
+            "type": "object",
+            "defaultValue": {
+                "publisher": "Canonical",
+                "offer": "UbuntuServer",
+                "sku": "16.04-LTS",
+                "version": "latest"
+            }
+        },
+        "principalId": {
+            "type": "string"
+        },
+        "builtInRoleType": {
+            "type": "string",
+            "allowedValues": [
+                "Owner",
+                "Contributor",
+                "Reader"
+            ]
+        },
+        "roleNameGuid": {
+            "type": "string",
+            "defaultValue": "[newGuid()]"
+        }
     },
     "variables": {
         "vnet":                        "[concat(resourceGroup().name, '-', resourceGroup().location, '-network')]",
