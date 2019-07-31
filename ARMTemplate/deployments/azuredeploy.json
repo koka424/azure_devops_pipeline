@@ -1,7 +1,7 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
-    "parameters": { 
+    "parameters": {
         "resourceGroup": {
             "type": "string",
             "defaultValue": "[resourceGroup().name]",
@@ -53,15 +53,15 @@
             }
         },
         "applicationGatewaySku": {
-           "type": "object",
-           "defaultValue": {
-               "name": "Standard_Small",
-               "tier": "Standard",
-               "capacity": 2
-           },
-           "metadata": {
-               "description": "A hash defining the name, tier, and capacity of the SKU."
-           } 
+            "type": "object",
+            "defaultValue": {
+                "name": "Standard_Small",
+                "tier": "Standard",
+                "capacity": 2
+            },
+            "metadata": {
+                "description": "A hash defining the name, tier, and capacity of the SKU."
+            }
         },
         "vmssSku": {
             "type": "object",
@@ -78,9 +78,9 @@
             "type": "object",
             "defaultValue": {
                 "publisher": "Canonical",
-                "offer":     "UbuntuServer",
-                "sku":       "16.04-LTS",
-                "version":   "latest"
+                "offer": "UbuntuServer",
+                "sku": "16.04-LTS",
+                "version": "latest"
             },
             "metadata": {
                 "description": "A hash defining the name, offer, sku, and version of the image for the VMSS."
@@ -109,34 +109,34 @@
             "metadata": {
                 "description": "A new GUID used to identify the role assignment"
             }
-        } 
+        }
     },
-    "variables": {  
-        "vnet":                        "[concat(parameters('resourceGroup'), '-', parameters('location'), '-network')]",
-        "vnetTemplate":                "templateVnet",
-        "vnetTemplateUri":             "https://raw.githubusercontent.com/koka424/azure_devops_pipeline/master/ARMTemplate/templates/vnet.json",
-        "roleAssignmentsTemplateUri":  "https://raw.githubusercontent.com/koka424/azure_devops_pipeline/master/ARMTemplate/templates/vnet.json",
-        "frontendSubnet":              "[concat(variables('vnet'), '-subnet-frontend')]",
-        "backendSubnet":               "[concat(variables('vnet'), '-subnet-backend')]",
-        "lbPublicIp":                  "[concat(variables('vnet'), '-lb-public-ip')]",
-        "applicationGateway":          "[concat(parameters('resourceGroup'), '-agw')]",
-        "vmss":                        "[concat(parameters('resourceGroup'), '-vmss')]",
-        "backendAddressPoolName":      "[concat(variables('vnet'), '-beap')]",
-        "frontendPortName":            "[concat(variables('vnet'), '-feport')]",
+    "variables": {
+        "vnet": "[concat(parameters('resourceGroup'), '-', parameters('location'), '-network')]",
+        "vnetTemplate": "templateVnet",
+        "vnetTemplateUri": "https://raw.githubusercontent.com/koka424/azure_devops_pipeline/master/ARMTemplate/templates/vnet.json",
+        "roleAssignmentsTemplateUri": "https://raw.githubusercontent.com/koka424/azure_devops_pipeline/master/ARMTemplate/templates/vnet.json",
+        "frontendSubnet": "[concat(variables('vnet'), '-subnet-frontend')]",
+        "backendSubnet": "[concat(variables('vnet'), '-subnet-backend')]",
+        "lbPublicIp": "[concat(variables('vnet'), '-lb-public-ip')]",
+        "applicationGateway": "[concat(parameters('resourceGroup'), '-agw')]",
+        "vmss": "[concat(parameters('resourceGroup'), '-vmss')]",
+        "backendAddressPoolName": "[concat(variables('vnet'), '-beap')]",
+        "frontendPortName": "[concat(variables('vnet'), '-feport')]",
         "frontendIpConfigurationName": "[concat(variables('vnet'), '-feip')]",
-        "httpSettingName":             "[concat(variables('vnet'), '-be-htst')]",
-        "listenerName":                "[concat(variables('vnet'), '-httplstn')]",
-        "requestRoutingRuleName":      "[concat(variables('vnet'), '-rqrt')]",
-        "redirectConfigurationName":   "[concat(variables('vnet'), '-rdrcfg')]",
+        "httpSettingName": "[concat(variables('vnet'), '-be-htst')]",
+        "listenerName": "[concat(variables('vnet'), '-httplstn')]",
+        "requestRoutingRuleName": "[concat(variables('vnet'), '-rqrt')]",
+        "redirectConfigurationName": "[concat(variables('vnet'), '-rdrcfg')]",
         "commonTags": {
-            "env":      "[parameters('env')]",
-            "app":      "[parameters('app')]",
-            "service":  "[parameters('service')]",
+            "env": "[parameters('env')]",
+            "app": "[parameters('app')]",
+            "service": "[parameters('service')]",
             "location": "[parameters('location')]"
         }
     },
-    "functions": [  ],
-    "resources": [ 
+    "functions": [],
+    "resources": [
         {
             "type": "Microsoft.Resources/deployments",
             "name": "roleAssignmentsTemplate",
@@ -145,7 +145,7 @@
                 "mode": "Incremental",
                 "templateLink": {
                     "uri": "[variables('roleAssignmentsTemplateUri')]",
-                    "contentVersion": "1.0.0.0" 
+                    "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
                     "principalId": {
@@ -165,7 +165,7 @@
                 "mode": "Incremental",
                 "templateLink": {
                     "uri": "[variables('vnetTemplateUri')]",
-                    "contentVersion": "1.0.0.0" 
+                    "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
                     "vnet": {
@@ -509,6 +509,6 @@
                 "doNotRunExtensionsOnOverprovisionedVMs": false
             }
         }
-     ],
-    "outputs": {  }
+    ],
+    "outputs": {}
 }
