@@ -1,11 +1,21 @@
 import json
 import os
 
-from jinja2 import Template
+from jinja2 import Template, Environment, FileSystemLoader
+import jinja2
 import yaml
 
 
 CURRENT_PATH = os.getcwd()
+
+
+def mandatory(input):
+  if not input:
+    raise Exception('Expected a value')
+
+loader = FileSystemLoader(os.path.join(CURRENT_PATH, 'templates'))
+env = Environment(autoescape=True, loader=loader)
+env.filters['mandatory'] = mandatory
 
 def load_params(env):
   param_file = os.path.join(CURRENT_PATH, 'parameters', f'{env}.parameters.yml.j2')
@@ -20,9 +30,7 @@ def load_templates(params):
   ]
   rendered_templates = dict()
   for resource in templates_to_load:
-    template_file = os.path.join(CURRENT_PATH, 'templates', f'{resource}.yml.j2')
-    with open(template_file, 'r') as f:
-      template = Template(f.read())
+    template = env.get_template(f'{resource}.yml.j2')
     rendered_templates[resource] = yaml.safe_load(template.render(params))
   return rendered_templates
 
