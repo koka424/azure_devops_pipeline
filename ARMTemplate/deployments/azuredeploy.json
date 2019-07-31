@@ -23,12 +23,11 @@
         "vnetAddressSpace":                 {"type": "object"},
         "frontendSubnetPrefix":             {"type": "string"},
         "backendSubnetPrefix":              {"type": "string"},
-        "applicationGatewaySku":            {"type": "object"},
-        "vmssSku":                          {"type": "object"},
-        "vmssStorageProfileImageReference": {"type": "object"},
-        "principalId":                      {"type": "string"},
-        "builtInRoleType":                  {"type": "string"},
-        "roleNameGuid":                     {"type": "string"}
+        "applicationGatewaySku":            {"type": "object", "defaultValue": {}},
+        "vmssSku":                          {"type": "object", "defaultValue": {}},
+        "vmssStorageProfileImageReference": {"type": "object", "defaultValue": {}},
+        "principalId":                      {"type": "string", "defaultValue": ""},
+        "builtInRoleType":                  {"type": "string", "defaultValue": ""}
     },
     "variables": {
         "vnet":                        "[concat(resourceGroup().name, '-', resourceGroup().location, '-network')]",
