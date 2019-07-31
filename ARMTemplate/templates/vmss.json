@@ -6,10 +6,27 @@
             "type": "string"
         },
         "vmssSku": {
-            "type": "object"
+            "type": "object",
+            "defaultValue": {
+                "name": "Standard_B1s",
+                "tier": "Standard",
+                "capacity": 2
+            },
+            "metadata": {
+                "description": "A hash defining the name, tier, and capacity of the SKU."
+            }
         },
         "vmssStorageProfileImageReference": {
-            "type": "object"
+            "type": "object",
+            "defaultValue": {
+                "publisher": "Canonical",
+                "offer": "UbuntuServer",
+                "sku": "16.04-LTS",
+                "version": "latest"
+            },
+            "metadata": {
+                "description": "A hash defining the name, offer, sku, and version of the image for the VMSS."
+            }
         },
         "vnet": {
             "type": "string"
