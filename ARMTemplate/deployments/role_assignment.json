@@ -10,7 +10,7 @@
         },
         "roleNameGuid": {
             "type": "string",
-            "defaultValue": null
+            "defaultValue": "[newGuid()]"
         }
     },
     "variables": {
