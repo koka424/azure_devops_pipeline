@@ -128,7 +128,7 @@
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "https://raw.githubusercontent.com/koka424/azure_devops_pipeline/master/ARMTemplate/templates/vnet.json",
+                    "uri": "https://raw.githubusercontent.com/koka424/azure_devops_pipeline/master/ARMTemplate/templates/role_assignments.json",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
@@ -185,6 +185,29 @@
             "properties": {
                 "publicIPAllocationMethod": "Dynamic",
                 "publicIPAddressVersion": "IPv4"
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "jumpboxTemplate",
+            "apiVersion": "2016-09-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', variables('vnetTemplate'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "https://raw.githubusercontent.com/koka424/azure_devops_pipeline/master/ARMTemplate/templates/jumpbox.json",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "vnet": {
+                        "value": "[variables('vnet')]"
+                    },
+                    "backendSubnet": {
+                        "value": "[variables('backendSubnet')]"
+                    }
+                }
             }
         },
         {
@@ -367,12 +390,12 @@
             "apiVersion": "2016-09-01",
             "dependsOn": [
                 "[resourceId('Microsoft.Resources/deployments', variables('vnetTemplate'))]",
-                "[resourceId('Microsoft.Network/applicationGateways', variables('applicationGatewayTemplate'))]"
+                "[resourceId('Microsoft.Resources/deployments', variables('applicationGatewayTemplate'))]"
             ],
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "https://raw.githubusercontent.com/koka424/azure_devops_pipeline/master/ARMTemplate/templates/vnet.json",
+                    "uri": "https://raw.githubusercontent.com/koka424/azure_devops_pipeline/master/ARMTemplate/templates/vmss.json",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
