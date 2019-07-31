@@ -24,10 +24,7 @@
             }
         },
         "backendSubnetPrefix": {
-            "type": "string",
-            "metadata": {
-                "description": "The address prefix of the backend subnet."
-            }
+            "type": "string"
         }
     },
     "variables": {},
