@@ -21,6 +21,7 @@
         },
         "roleNameGuid": {
             "type": "string",
+            "defaultValue": "[guid(resourceGroup().id, parameters('principalId'))]",
             "metadata": {
                 "description": "A new GUID used to identify the role assignment"
             }
