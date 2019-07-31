@@ -105,8 +105,7 @@
                         "value": "[parameters('builtInRoleType')]"
                     }
                 }
-            },
-            "tags": "[variables('commonTags')]"
+            }
         },
         {
             "type": "Microsoft.Resources/deployments",
@@ -152,7 +151,9 @@
             "properties": {
                 "publicIPAllocationMethod": "Dynamic",
                 "publicIPAddressVersion": "IPv4"
-            }
+            },
+            "tags": "[variables('commonTags')]"
+
         },
         {
             "type": "Microsoft.Resources/deployments",
