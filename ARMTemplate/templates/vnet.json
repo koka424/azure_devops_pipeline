@@ -5,20 +5,29 @@
         "vnet": {
             "type": "string"
         },
-        "vnetAddressSpace": {
-            "type": "object"
-        },
         "frontendSubnet": {
             "type": "string"
         },
         "backendSubnet": {
             "type": "string"
         },
-        "frontendSubnetPrefix": {
-            "type": "string"
+        "vnetAddressSpace": {
+            "type": "object",
+            "metadata": {
+                "description": "The address space of the VNET to use for this deployment."
+            }
         },
         "backendSubnetPrefix": {
-            "type": "string"
+            "type": "string",
+            "metadata": {
+                "description": "The address prefix of the backend subnet."
+            }
+        },
+        "frontendSubnetPrefix": {
+            "type": "string",
+            "metadata": {
+                "description": "The address prefix of the frontend subnet."
+            }
         }
     },
     "variables": {},

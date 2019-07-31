@@ -1,0 +1,131 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmss": {
+            "type": "string"
+        },
+        "vmssSku": {
+            "type": "object",
+            "metadata": {
+                "description": "A hash defining the name, tier, and capacity of the SKU."
+            }
+        },
+        "vmssStorageProfileImageReference": {
+            "type": "object",
+            "metadata": {
+                "description": "A hash defining the name, offer, sku, and version of the image for the VMSS."
+            }
+        },
+        "vnet": {
+            "type": "string"
+        },
+        "backendSubnet": {
+            "type": "string"
+        },
+        "applicationGateway": {
+            "type": "string"
+        },
+        "backendAddressPoolName": {
+            "type": "string"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Compute/virtualMachineScaleSets",
+            "apiVersion": "2019-03-01",
+            "name": "[concat(resourceGroup().name, '-vmss')]",
+            "location": "[resourceGroup().location]",
+            "sku": "[parameters('vmssSku')]",
+            "properties": {
+                "singlePlacementGroup": true,
+                "upgradePolicy": {
+                    "mode": "Manual",
+                    "automaticOSUpgradePolicy": {
+                        "enableAutomaticOSUpgrade": false,
+                        "disableAutomaticRollback": false
+                    }
+                },
+                "virtualMachineProfile": {
+                    "osProfile": {
+                        "computerNamePrefix": "[concat(parameters('vmss'), '-vm')]",
+                        "adminUsername": "plankton",
+                        "adminPassword": "Password1234!",
+                        "linuxConfiguration": {
+                            "disablePasswordAuthentication": false
+                        }
+                    },
+                    "storageProfile": {
+                        "osDisk": {
+                            "createOption": "FromImage",
+                            "caching": "ReadWrite",
+                            "managedDisk": {
+                                "storageAccountType": "Premium_LRS"
+                            }
+                        },
+                        "imageReference": "[parameters('vmssStorageProfileImageReference')]",
+                        "dataDisks": [
+                            {
+                                "lun": 0,
+                                "createOption": "Empty",
+                                "caching": "ReadWrite",
+                                "managedDisk": {
+                                    "storageAccountType": "Standard_LRS"
+                                },
+                                "diskSizeGB": 10
+                            }
+                        ]
+                    },
+                    "networkProfile": {
+                        "networkInterfaceConfigurations": [
+                            {
+                                "name": "[concat(parameters('vmss'), '-nip')]",
+                                "properties": {
+                                    "primary": true,
+                                    "ipConfigurations": [
+                                        {
+                                            "name": "[concat(parameters('vmss'), '-np-ipconfig')]",
+                                            "properties": {
+                                                "subnet": {
+                                                    "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnet'), parameters('backendSubnet'))]"
+                                                },
+                                                "applicationGatewayBackendAddressPools": [
+                                                    {
+                                                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateway')), concat('/backendAddressPools/', parameters('backendAddressPoolName')))]"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    "extensionProfile": {
+                        "extensions": [
+                            {
+                                "name": "CustomScript",
+                                "properties": {
+                                    "autoUpgradeMinorVersion": true,
+                                    "publisher": "Microsoft.Azure.Extensions",
+                                    "type": "CustomScript",
+                                    "typeHandlerVersion": "2.0",
+                                    "settings": {
+                                        "commandToExecute": "./install_nginx.sh",
+                                        "fileUris": [
+                                            "https://raw.githubusercontent.com/Azure/azure-docs-powershell-samples/master/application-gateway/iis/install_nginx.sh"
+                                        ]
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "overprovision": true,
+                "doNotRunExtensionsOnOverprovisionedVMs": false
+            }
+        }
+    ],
+    "outputs": {}
+}
